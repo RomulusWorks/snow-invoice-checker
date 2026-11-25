@@ -123,7 +123,10 @@ data-source/
 *.zip
 .DS_Store
 node_modules/
+.claude/
 ```
+
+*(v1.2, owner decision: `.claude/` — local editor/preview settings — is ignored so it can never be committed.)*
 
 ---
 
