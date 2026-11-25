@@ -119,8 +119,8 @@ export const SUMMARY_LABELS = Object.freeze({
   RATE_ESTIMATE: 'Estimated from entered contract rate',
 });
 
-// PENDING OWNER APPROVAL (Phase 5): labels SPEC §9 does not define.
-export const PHASE5_PENDING_COPY = Object.freeze({
+// Results, evidence and report labels — approved by the product owner in Phase 5 (SPEC v1.2, §9.5).
+export const UI_COPY = Object.freeze({
   OVERAGE_NO_RATE: '{n} push(es) beyond the allowance; no overage rate entered, so no dollar estimate.',
   SEASON_MAY_BE_INCOMPLETE: 'The season may be incomplete: not every billed push was marked as entered.',
   EVIDENCE_SUMMARY: 'Show evidence',

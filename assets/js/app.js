@@ -10,7 +10,7 @@ import { DEMO_LABEL, DEMO_FORM, DEMO_ROWS, DEMO_STATIONS, DEMO_OBSERVATIONS } fr
 import { buildReportModel, renderReport, renderSummary, summaryItems } from './report.js';
 import {
   MESSAGES, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES, SUMMARY_LABELS,
-  PHASE5_PENDING_COPY as P5,
+  UI_COPY as P5,
 } from './constants.js';
 import {
   decimalToCents, parseDecimal, isRealIsoDate, formatCents, formatQuantity, formatInches, centsToDecimalText,
