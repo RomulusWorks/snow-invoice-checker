@@ -183,8 +183,9 @@ export function buildResultsCsv(results, billedRows) {
   return `${lines.join('\r\n')}\r\n`;
 }
 
-// isoDate: the local date the export is made (YYYY-MM-DD).
-export function resultsCsvFilename(isoDate) {
+// isoDate: the local date the export is made (YYYY-MM-DD). Demo exports carry DEMO in the
+// filename (SPEC v1.2, §12.3) so they are never mistaken for a real property check.
+export function resultsCsvFilename(isoDate, { demo = false } = {}) {
   if (!isRealIsoDate(isoDate)) throw new Error('Export date must be YYYY-MM-DD.');
-  return `snow-invoice-checker-results-${isoDate}.csv`;
+  return `snow-invoice-checker-results-${demo ? 'DEMO-' : ''}${isoDate}.csv`;
 }

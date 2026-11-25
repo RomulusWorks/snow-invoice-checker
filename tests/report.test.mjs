@@ -52,6 +52,8 @@ test('results CSV quotes embedded double quotes and exports every row (>18)', ()
   assert.equal(records[1][6], 'Say "hi", ok');
   assert.ok(text.includes('"Say ""hi"", ok"'));
   assert.equal(resultsCsvFilename('2026-11-25'), 'snow-invoice-checker-results-2026-11-25.csv');
+  assert.equal(resultsCsvFilename('2026-11-25', { demo: true }), 'snow-invoice-checker-results-DEMO-2026-11-25.csv');
+  assert.equal(resultsCsvFilename('2026-11-25', { demo: false }), 'snow-invoice-checker-results-2026-11-25.csv');
   assert.throws(() => resultsCsvFilename('11/25/2026'));
 });
 

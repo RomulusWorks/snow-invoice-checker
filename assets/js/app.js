@@ -498,7 +498,7 @@ function startApp() {
     const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = resultsCsvFilename(localIsoDate());
+    a.download = resultsCsvFilename(localIsoDate(), { demo: lastRun.demo });
     document.body.append(a);
     a.click();
     a.remove();
@@ -750,6 +750,9 @@ function startApp() {
   writeForm(DEFAULT_FORM);
   renderRows();
   restoreSaved();
+  // Last step: tell the inline load check in index.html that the app started (SPEC v1.2).
+  document.documentElement.setAttribute('data-app-ready', 'true');
+  $('load-failed').hidden = true;
 }
 
 if (typeof document !== 'undefined') {

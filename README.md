@@ -72,8 +72,8 @@ date,service_type,quantity,amount_charged
 - **Print / Save as PDF** prints a one-page, landscape US Letter report: summary, up to the first
   18 lines, station list, data attribution and the full disclaimer.
 - **Export results CSV** downloads every line with its status, reasons, confidence, review amount
-  and weather summary (`snow-invoice-checker-results-YYYY-MM-DD.csv`). The file is created on
-  your device.
+  and weather summary (`snow-invoice-checker-results-YYYY-MM-DD.csv`; exports from the demo are
+  named `snow-invoice-checker-results-DEMO-YYYY-MM-DD.csv`). The file is created on your device.
 
 ### Remembering entries
 
@@ -91,7 +91,7 @@ storage. It is off by default; "Clear saved entries" removes them. Weather data 
 | "The weather response could not be read safely…" | NOAA returned something unexpected. No result was calculated; try again later. |
 | A CSV row error such as "Row 3: date must be a real date in YYYY-MM-DD format." | Fix that row in the file (row 1 is the first line after the header) and import again. |
 | "Your browser blocked local storage…" | Private browsing or strict settings block storage. The checker still works; entries just won't be remembered. |
-| The page looks unstyled or broken right after an update | Reload the page. Files can be cached for up to 10 minutes after a new version is published. |
+| "Part of this page didn't load. Reload the page to use the checker." or the page looks unstyled | Reload the page. A brief connection problem can stop a file loading, and for up to 10 minutes after a new version is published your browser may hold a mix of old and new files. If it persists, wait a few minutes and reload again. |
 
 ---
 
@@ -176,7 +176,7 @@ Live captures and request metadata (URL, HTTP status, time, sha256) are in `test
 | Attribute layout | `measurement,quality,source[,observationTime]`. CoCoRaHS (`N`) values have **3 parts** (no time), e.g. `",,N"`, `"T,,N"`; others have 4, e.g. `",,7,0900"`, `"T,,7,0700"`. Every value came with attributes. |
 | Measurement flags seen | blank, `T` (trace; value always `"0.0"`). No `P` or `A` in 14,177 live SNOW values (Nov 2025–Apr 2026) across MI, MN, VT, WY, ND, WI, NY, CO. Note: the current readme defines measurement flag `A` as a 6-hour *precipitation* report, not a multi-day snowfall accumulation; the SPEC §3.5 handling of `A` is kept (it can only block a flag). |
 | Quality flags seen | blank, `I` (internal consistency), `G` (gap check). Any non-blank quality flag excludes the value. |
-| Source flags seen | `N` (CoCoRaHS), `7` (COOP via WxCoder3), `1` (NWS CF6), `H` (HPRCC real-time — excluded), `Z` (Datzilla — not allowlisted, excluded) |
+| Source flags seen | `N` (CoCoRaHS), `7` (COOP via WxCoder3), `1` (NWS CF6), `H` (HPRCC real-time — excluded), `Z` (Datzilla official corrections — allowed since Phase 6) |
 
 #### Source flag allowlist (confirmed against the GHCN-Daily readme, 2026-11-25)
 
@@ -185,8 +185,9 @@ Live captures and request metadata (URL, HTTP status, time, sha256) are in `test
 `D` NWS CF6 via High Plains RCC · `F` U.S. Fort data · `G` GCOS / other government-supplied ·
 `K` COOP digitized from paper forms · `M` Monthly METAR Extract · `N` CoCoRaHS ·
 `R` NCEI Reference Network (CRN/RCRN) · `T` SNOTEL · `W` WBAN/ASOS Summary of the Day (ISD) ·
-`X` U.S. First-Order Summary of the Day (DSI-3210) · `d` NWS Daily Summary Messages via High Plains RCC
-(confirmed, so included). Excluded: `H`, `Z`, blank, lowercase/foreign codes, and anything unknown.
+`X` U.S. First-Order Summary of the Day (DSI-3210) · `Z` Datzilla official additions or replacements
+(owner decision, Phase 6) · `d` NWS Daily Summary Messages via High Plains RCC (confirmed, so included).
+Excluded: `H`, blank, lowercase/foreign codes, and anything unknown.
 Flags are case-sensitive.
 
 #### Browser CORS (SPEC §3.2)

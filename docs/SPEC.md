@@ -38,6 +38,11 @@
 |---|---|---|
 | 10 | Rule B is **not applied** (internal status `NOT_APPLIED`, internal code `RULE_B_CANNOT_FLAG`, never shown to the user) for a storm whose `billedPushes <= 1 + extraPushesAllowedPerStorm`. It then cannot contribute NOT_ENOUGH_DATA. Storms with more pushes keep the existing rule, including NOT_ENOUGH_DATA when no complete storm window exists. | `basePushes` is always ≥ 1, so `allowedPushes` ≥ 1 + extra; such a storm can never exceed it. Without this, a line where snow clearly fell (Rule A OK) showed "Not enough data" only because Rule B lacked a full storm window. |
 | 11 | New reason code **`OUTSIDE_SEASON`** for plow and walkway rows on a seasonal-allowance contract dated before `seasonStart` or after `seasonEnd`. Rules A and C do not run; Rule E still runs. Not duplicated → NOT_CHECKED with `OUTSIDE_SEASON`; duplicated → WORTH_QUESTIONING with `DUPLICATE_BILLING` and `OUTSIDE_SEASON`. Salt/other rows outside the season are unchanged (`SERVICE_TYPE_NOT_CHECKED`). | v1.1 left these rows NOT_CHECKED with no reason code or copy. |
+| 12 | *(Phase 6)* Source flag **`Z`** (Datzilla official additions or replacements) added to the allowlist (§3.3). | NCEI's own corrected values; highest-priority source in the GHCN-Daily readme. Previously excluded as not allowlisted. |
+| 13 | *(Phase 6)* Measurement flag `A` handling (§3.5) **kept as written**; NOAA's current definition recorded. | The readme defines `A` as a 6-hour precipitation report, not a multi-day snowfall total; it never appeared on SNOW in 14,177 live values. The §3.5 handling can only block a flag, never create one. |
+| 14 | *(Phase 6)* NOAA HTTP error copy (§9.5) no longer mentions a CSV download option. | The CSV fallback was not built because browser CORS works (§3.2); the clause pointed to a feature that does not exist. |
+| 15 | *(Phase 6)* Results CSV exported from demo mode is named `snow-invoice-checker-results-DEMO-YYYY-MM-DD.csv` (§12.3). Columns unchanged. | A demo export must never look like a real property check. |
+| 16 | *(Phase 6)* A plain (non-module) inline script shows a reload notice (§9.5) if the app has not started 1.5 s after the page load event. | A network hiccup that stops one module file from loading otherwise leaves a silent, non-working page. It also covers the up-to-10-minute GitHub Pages cache window after a deploy, when old and new files can mix. |
 
 ---
 
@@ -238,7 +243,7 @@ Never use `mode: "no-cors"`. Never add a proxy.
 
 NCEI's open-data policy: NOAA/federal environmental data are public domain in the U.S. [S3] GHCN-Daily merges multiple sources and records a **source flag** per value. [S1, S4]
 
-**Source flag allowlist (v1.1):** `0, 1, 6, 7, A, B, D, F, G, K, M, N, R, T, W, X`, plus `d` only if the Phase 2 readme check confirms its meaning. `N` = CoCoRaHS (allowed). Exclude `H`, all foreign/non-U.S. codes, blank, and unknown codes. Phase 2 must re-read the current readme [S4] and confirm each allowed code; remove any code whose meaning is unclear.
+**Source flag allowlist (v1.1):** `0, 1, 6, 7, A, B, D, F, G, K, M, N, R, T, W, X`, plus `d` only if the Phase 2 readme check confirms its meaning. `N` = CoCoRaHS (allowed). Exclude `H`, all foreign/non-U.S. codes, blank, and unknown codes. Phase 2 must re-read the current readme [S4] and confirm each allowed code; remove any code whose meaning is unclear. *(v1.2, Phase 6, owner decision: `Z` — "Datzilla official additions or replacements", NCEI's own corrected values and the highest-priority source in the readme — is **added** to the allowlist.)*
 
 Source flag `T` (SNOTEL) and measurement flag `T` (trace) are different fields; store them separately.
 
@@ -263,7 +268,7 @@ Phase 2 must confirm the unit returned with `units=metric` from the live respons
 | Field absent / empty / null / `-9999` | **Missing**, never zero. |
 | Measurement flag `T` (trace) | Valid observed trace → 0.0 in for comparisons; label "Trace" in evidence. |
 | Measurement flag `P` (missing, presumed zero) | Counts as a usable day but caps confidence at LOW; label "presumed zero." |
-| Measurement flag `A` (multi-day accumulation) | Do not assign to the day; window is `accumulated=true`; blocks HIGH/MEDIUM no-snow findings for that station. If the accumulated value ≥ trigger, treat as evidence snow occurred (Rule A returns OK). |
+| Measurement flag `A` (multi-day accumulation) | Do not assign to the day; window is `accumulated=true`; blocks HIGH/MEDIUM no-snow findings for that station. If the accumulated value ≥ trigger, treat as evidence snow occurred (Rule A returns OK). *(v1.2 note: NOAA's current readme defines measurement flag `A` as "precipitation total from one report of 6-hour precipitation amount"; it was not observed on SNOW in 14,177 live values. This handling is kept because it can only block a flag.)* |
 | Non-blank quality flag | Exclude from calculations; show as "rejected quality data." |
 | Blank quality flag | Passed QC; usable if source flag allowed. |
 | Source flag blank / not allowlisted | Exclude; show reason in evidence. |
@@ -757,7 +762,7 @@ Never round confidence up.
 | Loading | "Finding nearby stations and checking the weather records…" |
 | No stations in radius | "No stations with snowfall records were found within {radius} miles of this ZIP Code Area. Try a wider radius. No weather conclusion was made." |
 | Network/timeout | "We couldn't retrieve NOAA weather data. Check your connection and try once more. Your entries are still here." |
-| NOAA HTTP error | "NOAA's data service returned an error ({status}). No result was calculated. Try again later or use the CSV download option." |
+| NOAA HTTP error | "NOAA's data service returned an error ({status}). No result was calculated. Try again later." *(v1.2, Phase 6: "or use the CSV download option" removed — the CSV fallback was not needed because browser CORS works, §3.2.)* |
 | Invalid response | "The weather response could not be read safely. No result was calculated. Please try again later." |
 | Invalid ZIP shape | "Enter a five-digit ZIP code." |
 | ZIP not in ZCTA file | "This ZIP code is not in the bundled 2020 Census ZIP Code Tabulation Area file. Check the ZIP or use another ZIP for the property area. Some valid USPS ZIP codes do not have a Census ZCTA." |
@@ -766,6 +771,7 @@ Never round confidence up.
 | Corrupt saved data | "Saved entries could not be read and were skipped. You can continue with a fresh check." |
 | CORS fallback | "NOAA data could not be loaded directly in this browser. Download the CSV below, then upload the file here. The data stays on this device." |
 | Report truncation | "This one-page report shows the first 18 billed lines. Export the results CSV for the full line-by-line detail." |
+| *(v1.2, Phase 6)* App did not start (shown by an inline check 1.5 s after page load) | "Part of this page didn't load. Reload the page to use the checker. Your entries stay on this device." |
 | Contract field errors | "{Field name} is required for this contract type." / "{Field name} must be between {min} and {max}." / "Season end date must be on or after the start date." |
 | *(v1.2, approved Phase 4)* Optional money field invalid (price per push/event, overage rate, seasonal fee) | "{Field name} must be blank or a number greater than or equal to 0." |
 | *(v1.2, approved Phase 4)* Push allowance invalid | "Push allowance must be a number greater than or equal to 0." |
@@ -929,7 +935,7 @@ Title "Snow service invoice review"; ZIP + note that a Census ZCTA centroid was 
 Columns:
 `date,service_type,quantity,amount_charged,status,reason_codes,reason,confidence,flagged_units,estimated_review_amount,amount_is_rate_estimate,allowance_excess_units,station_max_snow_inches,station_median_snow_inches,station_count`
 
-All fields quoted (RFC 4180), UTF-8, filename `snow-invoice-checker-results-YYYY-MM-DD.csv`. Export all rows.
+All fields quoted (RFC 4180), UTF-8, filename `snow-invoice-checker-results-YYYY-MM-DD.csv` (*v1.2, Phase 6:* `snow-invoice-checker-results-DEMO-YYYY-MM-DD.csv` when exported from demo mode; columns unchanged). Export all rows.
 
 ---
 

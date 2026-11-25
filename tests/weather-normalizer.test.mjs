@@ -158,6 +158,15 @@ test('SYNTHETIC: source H, unknown source, and blank source excluded', () => {
   }
 });
 
+test('SYNTHETIC: source Z (Datzilla official corrections) allowed — SPEC v1.2 owner decision', () => {
+  const z = normalizeElement('25.4', ',,Z,0700');
+  assert.equal(z.sourceFlag, 'Z');
+  assert.equal(z.usable, true);
+  assert.equal(z.excludedReason, null);
+  assert.ok(close(z.valueInches, 1));
+  assert.equal(normalizeElement('25.4', ',,z,0700').excludedReason, 'SOURCE_NOT_ALLOWED', 'lowercase z is a different (foreign) code');
+});
+
 test('SYNTHETIC: source flags are case-sensitive (d allowed, n excluded)', () => {
   assert.equal(snowOn('2026-01-18').usable, true);
   assert.equal(snowOn('2026-01-19').excludedReason, 'SOURCE_NOT_ALLOWED');

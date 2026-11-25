@@ -31,6 +31,18 @@
     </details>
 
     <noscript><p class="notice">This checker needs JavaScript to run in your browser. Your entries stay on this device.</p></noscript>
+    <p id="load-failed" class="notice" role="alert" hidden>Part of this page didn't load. Reload the page to use the checker. Your entries stay on this device.</p>
+    <script>
+      // Classic (non-module) script: it still runs if a module file fails to load. If the app has
+      // not marked itself ready shortly after the page finishes loading, show the reload notice.
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          if (document.documentElement.getAttribute('data-app-ready') !== 'true') {
+            document.getElementById('load-failed').hidden = false;
+          }
+        }, 1500);
+      });
+    </script>
 
     <form id="checker-form" novalidate>
       <div id="demo-banner" class="demo-banner" hidden>

@@ -8,9 +8,10 @@ export const DEFAULT_RADIUS_MILES = 15;
 
 // GHCN-Daily source flags accepted for weather values (SPEC §3.3). Case-sensitive.
 // Each code was confirmed against the GHCN-Daily readme on 2026-11-25 (see README).
-// 'N' = CoCoRaHS (allowed). 'H', 'Z', blank, foreign and unknown codes are excluded.
+// 'N' = CoCoRaHS (allowed). 'Z' = Datzilla official additions/replacements (allowed, owner
+// decision in Phase 6, SPEC v1.2). 'H', blank, foreign and unknown codes are excluded.
 export const SOURCE_FLAG_ALLOWLIST = Object.freeze(
-  ['0', '1', '6', '7', 'A', 'B', 'D', 'F', 'G', 'K', 'M', 'N', 'R', 'T', 'W', 'X', 'd'],
+  ['0', '1', '6', '7', 'A', 'B', 'D', 'F', 'G', 'K', 'M', 'N', 'R', 'T', 'W', 'X', 'Z', 'd'],
 );
 
 export const MM_PER_INCH = 25.4;
@@ -160,7 +161,7 @@ export const MESSAGES = Object.freeze({
   LOADING: 'Finding nearby stations and checking the weather records…',
   NO_STATIONS: 'No stations with snowfall records were found within {radius} miles of this ZIP Code Area. Try a wider radius. No weather conclusion was made.',
   NETWORK: "We couldn't retrieve NOAA weather data. Check your connection and try once more. Your entries are still here.",
-  HTTP_ERROR: "NOAA's data service returned an error ({status}). No result was calculated. Try again later or use the CSV download option.",
+  HTTP_ERROR: "NOAA's data service returned an error ({status}). No result was calculated. Try again later.",
   INVALID_RESPONSE: 'The weather response could not be read safely. No result was calculated. Please try again later.',
   NO_ROWS_ON_RUN: 'Add at least one billed service before running the check.',
   STORAGE_BLOCKED: 'Your browser blocked local storage. The checker still works, but entries will not be remembered after you close this page.',
