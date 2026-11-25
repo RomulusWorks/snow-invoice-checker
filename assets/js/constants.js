@@ -151,6 +151,14 @@ export const UI_COPY = Object.freeze({
   EXPORT_BUTTON: 'Export results CSV',
 });
 
+// PENDING OWNER APPROVAL (layout update): action-bar line count and results status-count label.
+export const LAYOUT_PENDING_COPY = Object.freeze({
+  ROW_COUNT_NONE: 'No billed lines yet',
+  ROW_COUNT_ONE: '1 billed line',
+  ROW_COUNT_MANY: '{n} billed lines',
+  STATUS_COUNTS_LABEL: 'Results by status',
+});
+
 // Exact copy, SPEC §9.5.
 export const MESSAGES = Object.freeze({
   INVALID_ZIP_SHAPE: 'Enter a five-digit ZIP code.',

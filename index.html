@@ -13,22 +13,30 @@
   <a class="skip-link" href="#main">Skip to main content</a>
 
   <header class="site-header">
-    <div class="container">
+    <div class="container app-bar">
+      <svg class="mark" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M12 2v20M3.34 7l17.32 10M3.34 17L20.66 7"/>
+          <path d="M9.5 3.8 12 6l2.5-2.2M9.5 20.2 12 18l2.5 2.2M3.6 9.9l3.3.6-1.1-3.2M20.4 14.1l-3.3-.6 1.1 3.2M3.6 14.1l3.3-.6-1.1 3.2M20.4 9.9l-3.3.6 1.1-3.2"/>
+        </g>
+      </svg>
       <p class="wordmark">Snow Invoice Checker</p>
       <p class="descriptor">A free HOA board screening tool</p>
     </div>
   </header>
 
   <main id="main" class="container">
-    <section class="landing" aria-labelledby="landing-heading">
-      <h1 id="landing-heading">Check snow-removal invoices against nearby weather records.</h1>
-      <p>Enter your ZIP code, snow contract terms, and the services you were billed for. We'll compare those entries with nearby NOAA station records and highlight items that may be worth asking your contractor about. This is an informational screen, not a certified snowfall record or a finding of overbilling.</p>
-    </section>
+    <div class="intro-grid">
+      <section class="landing" aria-labelledby="landing-heading">
+        <h1 id="landing-heading">Check snow-removal invoices against nearby weather records.</h1>
+        <p>Enter your ZIP code, snow contract terms, and the services you were billed for. We'll compare those entries with nearby NOAA station records and highlight items that may be worth asking your contractor about. This is an informational screen, not a certified snowfall record or a finding of overbilling.</p>
+      </section>
 
-    <details class="disclaimer" open>
-      <summary>Important: what this tool can and cannot tell you</summary>
-      <p>This report is an informational screening tool, not a certified snowfall record, invoice audit, legal opinion, or finding of overbilling. Weather stations may be miles from the property and may report on observation periods that do not match contractor service times. Local snowfall, drifting, ice, pavement conditions, and work performed may differ from station records. A flagged item is only worth asking about; it is not proof that a service was unnecessary or incorrectly billed. Confirm conditions, service logs, contract terms, and invoice details with the contractor before taking action. NOAA/NCEI data are provided as-is and may be revised. This tool is independent and is not affiliated with or endorsed by NOAA.</p>
-    </details>
+      <details class="disclaimer" open>
+        <summary>Important: what this tool can and cannot tell you</summary>
+        <p>This report is an informational screening tool, not a certified snowfall record, invoice audit, legal opinion, or finding of overbilling. Weather stations may be miles from the property and may report on observation periods that do not match contractor service times. Local snowfall, drifting, ice, pavement conditions, and work performed may differ from station records. A flagged item is only worth asking about; it is not proof that a service was unnecessary or incorrectly billed. Confirm conditions, service logs, contract terms, and invoice details with the contractor before taking action. NOAA/NCEI data are provided as-is and may be revised. This tool is independent and is not affiliated with or endorsed by NOAA.</p>
+      </details>
+    </div>
 
     <noscript><p class="notice">This checker needs JavaScript to run in your browser. Your entries stay on this device.</p></noscript>
     <p id="load-failed" class="notice" role="alert" hidden>Part of this page didn't load. Reload the page to use the checker. Your entries stay on this device.</p>
@@ -51,11 +59,12 @@
       </div>
 
       <!-- 1. Property & contract -->
-      <section class="card" aria-labelledby="property-heading">
-        <h2 id="property-heading">Property &amp; contract</h2>
+      <section class="card step-card" aria-labelledby="property-heading">
+        <h2 id="property-heading"><span class="step" aria-hidden="true">1</span>Property &amp; contract</h2>
 
+        <div class="form-grid">
         <div class="field-row">
-          <div class="field">
+          <div class="field field-wide">
             <label for="zip">Property ZIP code</label>
             <input id="zip" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5"
               aria-describedby="zip-help zip-error" required>
@@ -71,7 +80,7 @@
             </select>
           </div>
         </div>
-        <details id="location-method" class="location-method" hidden>
+        <details id="location-method" class="location-method span-all" hidden>
           <summary>Location method</summary>
           <p id="location-method-text"></p>
         </details>
@@ -125,7 +134,7 @@
           <p id="price-per-event-error" class="field-error" hidden></p>
         </div>
 
-        <fieldset class="tiers" data-show-for="PER_INCH_TIERS" hidden>
+        <fieldset class="tiers span-all" data-show-for="PER_INCH_TIERS" hidden>
           <legend>Per-inch tiers</legend>
           <div class="table-scroll" role="region" aria-label="Per-inch tier table" tabindex="0">
             <table class="data-table">
@@ -139,7 +148,7 @@
           <p id="tier-error" class="field-error" hidden></p>
         </fieldset>
 
-        <div data-show-for="SEASONAL_ALLOWANCE" hidden>
+        <div class="group" data-show-for="SEASONAL_ALLOWANCE" hidden>
           <div class="field-row">
             <div class="field">
               <label for="season-start">Season start</label>
@@ -165,11 +174,11 @@
               <p id="overage-rate-error" class="field-error" hidden></p>
             </div>
           </div>
-          <div class="check">
+          <div class="check span-all">
             <input id="allowance-walkway" name="allowanceCountsWalkway" type="checkbox">
             <label for="allowance-walkway">Allowance counts walkway services too</label>
           </div>
-          <div class="check">
+          <div class="check span-all">
             <input id="season-complete" name="seasonComplete" type="checkbox">
             <label for="season-complete">I entered every billed push for this season</label>
           </div>
@@ -181,11 +190,18 @@
           <p id="seasonal-fee-help" class="help">Optional.</p>
           <p id="seasonal-fee-error" class="field-error" hidden></p>
         </div>
+        </div><!-- /form-grid -->
       </section>
 
       <!-- 2. Billed services -->
-      <section class="card" aria-labelledby="services-heading">
-        <h2 id="services-heading">Billed services</h2>
+      <section class="card step-card" aria-labelledby="services-heading">
+        <div class="card-head">
+          <h2 id="services-heading"><span class="step" aria-hidden="true">2</span>Billed services</h2>
+          <div class="button-row">
+            <button type="button" id="add-row" class="secondary">Add row</button>
+            <button type="button" id="load-example" class="secondary">Load example</button>
+          </div>
+        </div>
         <p id="no-rows" class="empty">Add a billed service or import a CSV to begin.</p>
         <div class="table-scroll" role="region" aria-labelledby="services-heading" tabindex="0">
           <table class="data-table" id="services-table">
@@ -200,10 +216,6 @@
             </thead>
             <tbody id="rows-body"></tbody>
           </table>
-        </div>
-        <div class="button-row">
-          <button type="button" id="add-row" class="secondary">Add row</button>
-          <button type="button" id="load-example" class="secondary">Load example</button>
         </div>
         <ul id="rows-errors" class="error-list" hidden></ul>
 
@@ -225,22 +237,26 @@
           <ul id="csv-errors" class="error-list" hidden></ul>
         </details>
 
-        <div class="storage-controls">
-          <div class="check">
-            <input id="remember" type="checkbox">
-            <label for="remember">Remember my entries on this device</label>
-          </div>
-          <div class="button-row">
-            <button type="button" id="clear-saved" class="secondary">Clear saved entries</button>
-            <button type="button" id="reset" class="secondary">Reset</button>
-          </div>
-        </div>
       </section>
 
-      <div class="run">
-        <button type="submit" id="run-check" class="primary">Check billed services</button>
+      <!-- Sticky action bar: stays in view while editing long invoices -->
+      <div class="action-bar">
+        <div class="action-bar-info">
+          <p id="row-count" class="row-count"></p>
+          <div class="storage-controls">
+            <div class="check">
+              <input id="remember" type="checkbox">
+              <label for="remember">Remember my entries on this device</label>
+            </div>
+            <button type="button" id="clear-saved" class="link-button">Clear saved entries</button>
+            <button type="button" id="reset" class="link-button">Reset</button>
+          </div>
+        </div>
+        <div class="action-bar-run">
+          <p id="form-errors" class="form-errors" role="alert" hidden></p>
+          <button type="submit" id="run-check" class="primary">Check billed services</button>
+        </div>
       </div>
-      <p id="form-errors" class="form-errors" role="alert" hidden></p>
     </form>
 
     <!-- Status announcements (loading, errors, notices) -->
@@ -253,6 +269,7 @@
       <p id="results-empty" class="empty">Your report will appear here after you run the check.</p>
       <div id="results-content" hidden>
         <div id="results-summary"></div>
+        <ul id="status-counts" class="status-counts" aria-label="Results by status"></ul>
         <div class="table-scroll" role="region" aria-label="Results by billed line" tabindex="0">
           <table class="data-table results-table">
             <thead>

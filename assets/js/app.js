@@ -10,7 +10,7 @@ import { DEMO_LABEL, DEMO_FORM, DEMO_ROWS, DEMO_STATIONS, DEMO_OBSERVATIONS } fr
 import { buildReportModel, renderReport, renderSummary, summaryItems } from './report.js';
 import {
   MESSAGES, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES, SUMMARY_LABELS,
-  UI_COPY as P5,
+  UI_COPY as P5, LAYOUT_PENDING_COPY as LAYOUT_COPY,
 } from './constants.js';
 import {
   decimalToCents, parseDecimal, isRealIsoDate, formatCents, formatQuantity, formatInches, centsToDecimalText,
@@ -277,6 +277,9 @@ function startApp() {
     });
     $('no-rows').hidden = state.rows.length > 0;
     $('services-table').hidden = state.rows.length === 0;
+    const n = state.rows.length;
+    $('row-count').textContent = n === 0 ? LAYOUT_COPY.ROW_COUNT_NONE
+      : n === 1 ? LAYOUT_COPY.ROW_COUNT_ONE : fill(LAYOUT_COPY.ROW_COUNT_MANY, { n });
   }
 
   function renderTiers() {
@@ -377,6 +380,7 @@ function startApp() {
     lastRun = null;
     $('results-body').replaceChildren();
     $('results-summary').replaceChildren();
+    $('status-counts').replaceChildren();
     $('results-content').hidden = true;
     $('results-empty').hidden = false;
     $('results-demo-label').hidden = true;
@@ -456,6 +460,10 @@ function startApp() {
     lastRun = run;
     const { out, billedRows } = run;
     renderSummary($('results-summary'), summaryItems(out.summary, out.warnings));
+    // Status counts row (existing labels and badge styles; text, never colour alone).
+    const counts = $('status-counts');
+    counts.replaceChildren(...Object.entries(out.summary.statusCounts).map(([status, count]) =>
+      node('li', null, node('span', `status-badge status-${status}`, STATUS_LABELS[status]), node('strong', null, String(count)))));
     const body = $('results-body');
     body.replaceChildren();
     out.results.forEach((r, i) => {

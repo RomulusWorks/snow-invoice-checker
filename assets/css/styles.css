@@ -24,7 +24,7 @@ body {
   line-height: 1.55;
 }
 
-.container { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+.container { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem; }
 
 .skip-link {
   position: absolute; left: -999px; top: 0;
@@ -36,14 +36,20 @@ body {
 
 a { color: var(--accent); }
 
-.site-header { border-bottom: 1px solid var(--border); background: var(--surface); padding: 1rem 0; }
-.wordmark { margin: 0; font-weight: 700; font-size: 1.25rem; letter-spacing: 0.01em; }
-.descriptor { margin: 0; color: var(--muted); font-size: 0.95rem; }
+/* App bar: slim, product-like header with the snowflake mark. */
+.site-header { border-bottom: 1px solid var(--border); background: var(--surface); padding: 0.6rem 0; }
+.app-bar { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+.mark { color: var(--accent); flex: none; }
+.wordmark { margin: 0; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.01em; }
+.descriptor { margin: 0; color: var(--muted); font-size: 0.9rem; padding-left: 0.6rem; border-left: 1px solid var(--border); }
 
-main { padding: 2rem 1.25rem 3rem; }
+main { padding: 1.5rem 1.25rem 3rem; }
 
-h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 0.75rem; }
-.landing p { max-width: 46rem; margin: 0 0 1.5rem; }
+h1 { font-size: 1.45rem; line-height: 1.25; margin: 0 0 0.5rem; }
+.landing p { margin: 0; color: var(--muted); }
+
+/* Intro beside the disclaimer (stacks on narrow screens). */
+.intro-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 1.25rem 2rem; align-items: start; }
 
 .disclaimer {
   background: var(--surface);
@@ -51,7 +57,7 @@ h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 0.75rem; }
   border-left: 4px solid var(--accent);
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  max-width: 46rem;
+  font-size: 0.92rem;
 }
 .disclaimer summary { cursor: pointer; font-weight: 600; }
 .disclaimer p { margin: 0.75rem 0 0.25rem; color: var(--ink); }
@@ -112,7 +118,6 @@ button.secondary, .button-link.secondary { background: var(--surface); color: va
 button.secondary:hover, .button-link.secondary:hover { background: #e8f3f2; }
 button.link-danger { background: none; border: 1px solid transparent; color: var(--muted); text-decoration: underline; padding: 0.35rem 0.5rem; }
 .button-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.75rem 0; }
-.run { margin: 1rem 0; }
 
 /* ---- Tables ---- */
 /* position: relative keeps visually-hidden cell labels inside the scroll box (no page overflow). */
@@ -198,11 +203,61 @@ details.evidence p { margin: 0.35rem 0; }
   .report-table { min-width: 44rem; }
 }
 
+/* ---- Stepped workspace (owner-approved layout) ---- */
+/* Keep focused fields clear of the sticky action bar (WCAG 2.4.11 focus not obscured). */
+html { scroll-padding-bottom: 7rem; }
+
+.step-card h2, .card-head h2 { display: flex; align-items: center; gap: 0.6rem; }
+.step {
+  display: inline-grid; place-items: center; flex: none;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 700;
+}
+.card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.75rem; }
+.card-head h2 { margin: 0; }
+.card-head .button-row { margin: 0; }
+
+/* One dense grid for all contract fields; wrapper groups dissolve into it. */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0 1.25rem; align-items: start; }
+.form-grid .field-row, .form-grid .group { display: contents; }
+.form-grid .field-wide { grid-column: span 2; }
+.form-grid .span-all { grid-column: 1 / -1; }
+.form-grid .field input[type="text"], .form-grid .field input[type="date"], .form-grid .field select { width: 100%; }
+.form-grid .location-method { margin: -0.5rem 0 1rem; }
+
+/* Sticky action bar */
+.action-bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.5rem;
+  margin: 1.25rem 0; padding: 0.75rem 1.25rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 -2px 12px rgba(29, 35, 41, 0.1);
+}
+.action-bar-info { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.row-count { margin: 0; font-weight: 600; }
+.storage-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1rem; font-size: 0.9rem; }
+.storage-controls .check { margin: 0; align-items: center; }
+.storage-controls .check input { margin-top: 0; }
+.link-button { background: none; border: 0; padding: 0.2rem 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.9rem; }
+.action-bar-run { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.5rem 1rem; }
+.action-bar .form-errors { margin: 0; }
+
+/* Results: summary tiles and status counts */
+#results-summary .summary-list { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.75rem; }
+#results-summary .summary-list li { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; }
+#results-summary .summary-list strong { font-size: 1.4rem; line-height: 1.2; }
+.status-counts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.75rem; padding: 0; list-style: none; }
+.status-counts li { display: flex; align-items: center; gap: 0.35rem; }
+
+@media (max-width: 900px) {
+  .intro-grid { grid-template-columns: 1fr; }
+}
+
 /* ---- Print: one Letter landscape page with the report only (SPEC §12.2) ---- */
 @page { size: letter landscape; margin: 0.35in; }
 @media print {
   html, body { background: #fff; color: #000; font-size: 8pt; line-height: 1.25; }
-  .skip-link, .site-header, .landing, .disclaimer, noscript, #checker-form, #status, #results, .cta, .site-footer, .no-print { display: none !important; }
+  .skip-link, .site-header, .intro-grid, .landing, .disclaimer, noscript, #load-failed, #checker-form, #status, #results, .cta, .site-footer, .no-print { display: none !important; }
   main, .container { max-width: none; margin: 0; padding: 0; }
   #report-section { display: block !important; border: 0; padding: 0; margin: 0; }
   #report-section[hidden] { display: none !important; }
@@ -228,6 +283,12 @@ details.evidence p { margin: 0.35rem 0; }
   .card { padding: 1rem; }
   input[type="text"], input[type="date"], select, textarea { font-size: 16px; }
   button.primary { width: 100%; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .field-wide { grid-column: auto; }
+  .descriptor { border-left: 0; padding-left: 0; width: 100%; }
+  /* On phones the bar is not sticky: it would cover too much of a small screen. */
+  .action-bar { position: static; padding: 0.75rem; box-shadow: none; }
+  .action-bar-run { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
