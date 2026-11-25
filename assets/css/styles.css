@@ -1,0 +1,66 @@
+/* Calm civic-data look (SPEC §10.4). System fonts, off-white background, dark ink, teal accent. */
+:root {
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --ink: #1d2329;
+  --muted: #4a545e;
+  --border: #d5d9dd;
+  --accent: #0b6e69;
+  --focus: #0b6e69;
+  --amber: #8a5a00;
+  --grey: #5c6670;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.container { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+
+.skip-link {
+  position: absolute; left: -999px; top: 0;
+  background: var(--surface); color: var(--ink); padding: 0.5rem 1rem;
+}
+.skip-link:focus { left: 1rem; top: 1rem; z-index: 10; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+a { color: var(--accent); }
+
+.site-header { border-bottom: 1px solid var(--border); background: var(--surface); padding: 1rem 0; }
+.wordmark { margin: 0; font-weight: 700; font-size: 1.25rem; letter-spacing: 0.01em; }
+.descriptor { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+main { padding: 2rem 1.25rem 3rem; }
+
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 0.75rem; }
+.landing p { max-width: 46rem; margin: 0 0 1.5rem; }
+
+.disclaimer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  max-width: 46rem;
+}
+.disclaimer summary { cursor: pointer; font-weight: 600; }
+.disclaimer p { margin: 0.75rem 0 0.25rem; color: var(--ink); }
+
+@media (max-width: 700px) {
+  h1 { font-size: 1.4rem; }
+  main { padding-top: 1.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
