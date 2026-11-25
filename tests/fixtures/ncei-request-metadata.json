@@ -1,0 +1,142 @@
+{
+  "documentation": "https://www.ncei.noaa.gov/support/access-data-service-api-user-documentation",
+  "readme": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+  "dataTypes": [
+    "SNOW",
+    "SNWD"
+  ],
+  "units": "metric",
+  "note": "Bodies are saved byte-for-byte as received. Request Origin header: http://localhost:8000.",
+  "captures": [
+    {
+      "file": "ncei-daily-summaries-live-2026-11-25-detroit-48226.json",
+      "purpose": "Urban storm (Jan 15 2026): positive snowfall, trace (T), absent values, sources N and 7, CoCoRaHS 3-part attributes.",
+      "zip": "48226",
+      "radiusMiles": 15,
+      "stationsRequested": [
+        "US1MIWY0163",
+        "US1MIWY0038",
+        "US1MIWY0148",
+        "USC00202016",
+        "US1MIWY0182",
+        "US1MIWY0158",
+        "US1MIMB0073",
+        "US1MIOK0182",
+        "USC00202015",
+        "USC00203477",
+        "US1MIWY0178",
+        "US1MIWY0081",
+        "USC00209110",
+        "US1MIWY0043",
+        "US1MIOK0122",
+        "US1MIOK0128",
+        "US1MIMB0093",
+        "US1MIOK0141",
+        "US1MIMB0033"
+      ],
+      "stationsInRadius": 19,
+      "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=US1MIWY0163%2CUS1MIWY0038%2CUS1MIWY0148%2CUSC00202016%2CUS1MIWY0182%2CUS1MIWY0158%2CUS1MIMB0073%2CUS1MIOK0182%2CUSC00202015%2CUSC00203477%2CUS1MIWY0178%2CUS1MIWY0081%2CUSC00209110%2CUS1MIWY0043%2CUS1MIOK0122%2CUS1MIOK0128%2CUS1MIMB0093%2CUS1MIOK0141%2CUS1MIMB0033&startDate=2026-01-13&endDate=2026-01-17&dataTypes=SNOW%2CSNWD&includeAttributes=true&includeStationName=true&includeStationLocation=true&format=json&units=metric",
+      "httpStatus": 200,
+      "capturedAt": "2026-11-25T14:58:13.304Z",
+      "contentType": "application/json;charset=utf-8",
+      "accessControlAllowOrigin": "*",
+      "bytes": 13541,
+      "sha256": "73ef41fcf60cf756f3064440a9ef6d53cb24fb60be90b619d720f0008249a684"
+    },
+    {
+      "file": "ncei-daily-summaries-live-2026-11-25-duluth-55802.json",
+      "purpose": "Real quality flag I and non-allowlisted source H (HPRCC real-time).",
+      "zip": "55802",
+      "radiusMiles": 25,
+      "stationsRequested": [
+        "USC00478349",
+        "US1WIDG0013",
+        "US1MNSL0139",
+        "US1WIDG0058",
+        "US1WIDG0030",
+        "US1MNSL0220",
+        "US1WIDG0018",
+        "US1WIDG0035",
+        "US1MNSL0202",
+        "US1MNSL0385",
+        "US1MNSL0070",
+        "US1MNSL0335",
+        "US1MNSL0018",
+        "US1MNSL0030",
+        "US1MNSL0341",
+        "US1MNSL0005",
+        "US1MNSL0369",
+        "US1MNSL0331",
+        "US1WIDG0059",
+        "US1MNSL0408"
+      ],
+      "stationsInRadius": 82,
+      "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=USC00478349%2CUS1WIDG0013%2CUS1MNSL0139%2CUS1WIDG0058%2CUS1WIDG0030%2CUS1MNSL0220%2CUS1WIDG0018%2CUS1WIDG0035%2CUS1MNSL0202%2CUS1MNSL0385%2CUS1MNSL0070%2CUS1MNSL0335%2CUS1MNSL0018%2CUS1MNSL0030%2CUS1MNSL0341%2CUS1MNSL0005%2CUS1MNSL0369%2CUS1MNSL0331%2CUS1WIDG0059%2CUS1MNSL0408&startDate=2026-03-08&endDate=2026-03-16&dataTypes=SNOW%2CSNWD&includeAttributes=true&includeStationName=true&includeStationLocation=true&format=json&units=metric",
+      "httpStatus": 200,
+      "capturedAt": "2026-11-25T14:58:13.829Z",
+      "contentType": "application/json;charset=utf-8",
+      "accessControlAllowOrigin": "*",
+      "bytes": 16422,
+      "sha256": "71b802640a68cd1005eae59af4d6e13079ec01cb41c64c2c4a1b8ec54177208e"
+    },
+    {
+      "file": "ncei-daily-summaries-live-2026-11-25-silverthorne-80424.json",
+      "purpose": "Mountain area: real quality flag G (gap check) on SNWD.",
+      "zip": "80424",
+      "radiusMiles": 25,
+      "stationsRequested": [
+        "US1COSU0067",
+        "USC00050909",
+        "USC00052281",
+        "US1COSU0061",
+        "US1COSU0006",
+        "USC00051660",
+        "US1COSU0069",
+        "US1COPK0015",
+        "USC00052816",
+        "USC00053530",
+        "US1COSU0008",
+        "US1COPK0078",
+        "US1COPK0110",
+        "USC00051186",
+        "US1COSU0027",
+        "US1COEG0071",
+        "US1COEG0019",
+        "USC00058575",
+        "US1COPK0117",
+        "US1COLK0001"
+      ],
+      "stationsInRadius": 24,
+      "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=US1COSU0067%2CUSC00050909%2CUSC00052281%2CUS1COSU0061%2CUS1COSU0006%2CUSC00051660%2CUS1COSU0069%2CUS1COPK0015%2CUSC00052816%2CUSC00053530%2CUS1COSU0008%2CUS1COPK0078%2CUS1COPK0110%2CUSC00051186%2CUS1COSU0027%2CUS1COEG0071%2CUS1COEG0019%2CUSC00058575%2CUS1COPK0117%2CUS1COLK0001&startDate=2026-01-05&endDate=2026-01-10&dataTypes=SNOW%2CSNWD&includeAttributes=true&includeStationName=true&includeStationLocation=true&format=json&units=metric",
+      "httpStatus": 200,
+      "capturedAt": "2026-11-25T14:58:14.162Z",
+      "contentType": "application/json;charset=utf-8",
+      "accessControlAllowOrigin": "*",
+      "bytes": 20136,
+      "sha256": "761192a5f94ac464c513d9ad2fc0faa054b7cae2903affdb3fa06406dba7a2b8"
+    }
+  ],
+  "corsEvidence": {
+    "method": "Real browser fetch(url,{method:\"GET\",mode:\"cors\",credentials:\"omit\"}) of the detroit-48226 capture URL, run on the page origin.",
+    "results": [
+      {
+        "origin": "https://romulusworks.github.io",
+        "testedAt": "2026-11-25T14:58:27.216Z",
+        "httpStatus": 200,
+        "responseType": "cors",
+        "records": 71,
+        "result": "CORS PASS"
+      },
+      {
+        "origin": "http://localhost:8000",
+        "testedAt": "2026-11-25T14:58:36.771Z",
+        "httpStatus": 200,
+        "responseType": "cors",
+        "records": 71,
+        "result": "CORS PASS"
+      }
+    ],
+    "curlHeaderCheck": "Access-Control-Allow-Origin: * returned for Origin http://localhost:8000",
+    "conclusion": "Automatic JSON mode. CSV download/upload fallback not required."
+  }
+}

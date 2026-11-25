@@ -1,0 +1,2 @@
+# Live NOAA captures must stay byte-for-byte unmodified (no line-ending conversion).
+tests/fixtures/** -text
