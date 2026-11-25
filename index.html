@@ -233,13 +233,54 @@
     <!-- Status announcements (loading, errors, notices) -->
     <div id="status" class="status" aria-live="polite"></div>
 
-    <!-- Results (placeholder table this phase) -->
+    <!-- 6. Results -->
     <section id="results" class="card" aria-labelledby="results-heading" tabindex="-1">
       <h2 id="results-heading">Results</h2>
       <p id="results-demo-label" class="demo-label" hidden></p>
       <p id="results-empty" class="empty">Your report will appear here after you run the check.</p>
-      <div id="results-content" hidden></div>
+      <div id="results-content" hidden>
+        <div id="results-summary"></div>
+        <div class="table-scroll" role="region" aria-label="Results by billed line" tabindex="0">
+          <table class="data-table results-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th><th scope="col">Service</th><th scope="col">Qty</th><th scope="col">Amount</th>
+                <th scope="col">Status</th><th scope="col">Reason</th><th scope="col">Confidence</th><th scope="col">Review amount</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+        <div class="button-row">
+          <button type="button" id="export-csv" class="secondary">Export results CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Report preview -->
+    <section id="report-section" class="card report-card" aria-labelledby="report-title" hidden>
+      <div class="button-row no-print">
+        <button type="button" id="print-report" class="primary">Print / Save as PDF</button>
+      </div>
+      <article id="report" class="report"></article>
+    </section>
+
+    <!-- 8. Waitlist -->
+    <section class="cta no-print" aria-label="Waitlist">
+      <p>Want a full line-by-line audit of your contract and invoices? <a id="waitlist-link" href="https://forms.gle/REPLACE_WITH_REAL_FORM_ID" target="_blank" rel="noopener noreferrer"><strong>Join the waitlist.</strong></a></p>
     </section>
   </main>
+
+  <!-- 9. Footer -->
+  <footer class="site-footer no-print">
+    <div class="container">
+      <p id="footer-attribution">Weather data: NOAA National Centers for Environmental Information (NCEI), Global Historical Climatology Network Daily (GHCN-Daily), Version 3. Accessed <span id="footer-access-date">[date]</span>. Dataset DOI: 10.7289/V5D21VHZ. This tool is independent and is not affiliated with or endorsed by NOAA.</p>
+      <p>Sources:
+        <a href="https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily">NOAA NCEI GHCN-Daily</a> ·
+        <a href="https://doi.org/10.7289/V5D21VHZ">Dataset DOI 10.7289/V5D21VHZ</a> ·
+        <a href="https://www.census.gov/geographies/reference-files/2020/geo/gazetter-file.html">Census 2020 Gazetteer (ZIP Code Tabulation Areas)</a>
+      </p>
+    </div>
+  </footer>
 </body>
 </html>

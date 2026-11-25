@@ -1,7 +1,7 @@
 // CSV import of billed services (SPEC §5). All-or-nothing: rows are returned only when the
 // whole file validates. Errors use the exact SPEC §5.3 copy.
-import { SERVICE_TYPES } from './constants.js';
-import { isRealIsoDate, parseDecimal, decimalToCents } from './format.js';
+import { SERVICE_TYPES, STATUS_LABELS } from './constants.js';
+import { isRealIsoDate, parseDecimal, decimalToCents, centsToDecimalText, formatQuantity, formatInches } from './format.js';
 
 export const CSV_HEADER = ['date', 'service_type', 'quantity', 'amount_charged'];
 
@@ -143,4 +143,48 @@ export function parseBilledServicesCsv(text) {
   if (unique.length) return { ok: false, errors: unique };
   if (rows.length === 0) return { ok: false, errors: [CSV_MESSAGES.NO_CONTENT] };
   return { ok: true, rows };
+}
+
+// ---------------------------------------------------------------- results export (SPEC §12.3)
+export const RESULTS_CSV_HEADER = [
+  'date', 'service_type', 'quantity', 'amount_charged', 'status', 'reason_codes', 'reason', 'confidence',
+  'flagged_units', 'estimated_review_amount', 'amount_is_rate_estimate', 'allowance_excess_units',
+  'station_max_snow_inches', 'station_median_snow_inches', 'station_count',
+];
+
+const quote = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+// results[i] corresponds to billedRows[i] (runChecks output order). Every field is quoted;
+// lines end with CRLF (RFC 4180). Returns a string; the caller encodes it as UTF-8.
+export function buildResultsCsv(results, billedRows) {
+  if (results.length !== billedRows.length) throw new Error('Results and billed rows must have the same length.');
+  const lines = [RESULTS_CSV_HEADER.map(quote).join(',')];
+  results.forEach((r, i) => {
+    const row = billedRows[i];
+    const ev = r.evidence ?? {};
+    lines.push([
+      row.date,
+      row.serviceType,
+      formatQuantity(row.quantity),
+      centsToDecimalText(row.amountChargedCents),
+      STATUS_LABELS[r.status],
+      r.reasonCodes.join(';'),
+      r.reasonText,
+      r.confidence ?? '',
+      formatQuantity(r.flaggedUnits),
+      r.flaggedUnits > 0 ? centsToDecimalText(r.estimatedAmountCents) : '',
+      r.amountIsRateEstimate ? 'true' : 'false',
+      formatQuantity(r.allowanceExcessUnits),
+      formatInches(ev.maxSnowInches ?? null),
+      formatInches(ev.medianSnowInches ?? null),
+      String(ev.stationCount ?? 0),
+    ].map(quote).join(','));
+  });
+  return `${lines.join('\r\n')}\r\n`;
+}
+
+// isoDate: the local date the export is made (YYYY-MM-DD).
+export function resultsCsvFilename(isoDate) {
+  if (!isRealIsoDate(isoDate)) throw new Error('Export date must be YYYY-MM-DD.');
+  return `snow-invoice-checker-results-${isoDate}.csv`;
 }

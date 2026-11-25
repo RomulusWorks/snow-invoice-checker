@@ -89,6 +89,67 @@ export const EVIDENCE_LABELS = Object.freeze({
   REJECTED_QUALITY: 'rejected quality data',
 });
 
+// ---- Report, export, waitlist (SPEC §3.3, §9.4, §10.3, §12) ----
+export const REPORT_MAX_ROWS = 18;
+export const WAITLIST_URL = 'https://forms.gle/REPLACE_WITH_REAL_FORM_ID';
+export const REPORT_TITLE = 'Snow service invoice review';
+
+// Exact copy, SPEC §9.4.
+export const DISCLAIMER = 'This report is an informational screening tool, not a certified snowfall record, invoice audit, legal opinion, or finding of overbilling. Weather stations may be miles from the property and may report on observation periods that do not match contractor service times. Local snowfall, drifting, ice, pavement conditions, and work performed may differ from station records. A flagged item is only worth asking about; it is not proof that a service was unnecessary or incorrectly billed. Confirm conditions, service logs, contract terms, and invoice details with the contractor before taking action. NOAA/NCEI data are provided as-is and may be revised. This tool is independent and is not affiliated with or endorsed by NOAA.';
+
+// Exact copy, SPEC §3.3. {date} = weather access date.
+export const ATTRIBUTION_TEMPLATE = 'Weather data: NOAA National Centers for Environmental Information (NCEI), Global Historical Climatology Network Daily (GHCN-Daily), Version 3. Accessed {date}. Dataset DOI: 10.7289/V5D21VHZ. This tool is independent and is not affiliated with or endorsed by NOAA.';
+
+// SPEC §4.2 contract type names.
+export const CONTRACT_TYPE_LABELS = Object.freeze({
+  PER_PUSH: 'Per-push',
+  PER_EVENT: 'Per-event',
+  PER_INCH_TIERS: 'Per-inch tiers',
+  SEASONAL_ALLOWANCE: 'Seasonal flat fee with push allowance',
+  SEASONAL_UNLIMITED: 'Seasonal flat fee, unlimited',
+});
+
+// SPEC §7.10 summary labels.
+export const SUMMARY_LABELS = Object.freeze({
+  TOTAL_BILLED: 'Total billed',
+  ITEMS_WORTH_QUESTIONING: 'Items worth questioning',
+  REVIEW_AMOUNT: 'Estimated amount associated with items worth reviewing',
+  AMOUNT_UNAVAILABLE: 'amount unavailable: {n} rows',
+  CONTRACTUAL_OVERAGE: 'Estimated contractual overage at the entered rate',
+  RATE_ESTIMATE: 'Estimated from entered contract rate',
+});
+
+// PENDING OWNER APPROVAL (Phase 5): labels SPEC §9 does not define.
+export const PHASE5_PENDING_COPY = Object.freeze({
+  OVERAGE_NO_RATE: '{n} push(es) beyond the allowance; no overage rate entered, so no dollar estimate.',
+  SEASON_MAY_BE_INCOMPLETE: 'The season may be incomplete: not every billed push was marked as entered.',
+  EVIDENCE_SUMMARY: 'Show evidence',
+  EVIDENCE_WINDOW: 'Review window: {dates}. Trigger: {trigger} in.',
+  EVIDENCE_TRIGGER_INHERITED: '(walkway trigger left blank, so the plow trigger is used)',
+  EVIDENCE_MAX_MEDIAN: 'Highest complete three-day total: {max} in. Median: {median} in. Complete station windows: {count}.',
+  EVIDENCE_STORM: 'Storm total used for push count: {eventSnow} in. over {dates}.',
+  EVIDENCE_NO_STATIONS: 'No nearby station reported for these dates.',
+  EVIDENCE_ACCESS: 'NOAA data accessed {date}. Data may be revised.',
+  EXCLUDED: {
+    MISSING: 'missing, not treated as zero',
+    QUALITY_FLAG: 'rejected quality data',
+    SOURCE_NOT_ALLOWED: 'source not accepted',
+    ACCUMULATED: 'multi-day total, not assigned to one day',
+    ATTRIBUTES_MISSING: 'flags missing',
+    ATTRIBUTES_UNREADABLE: 'flags unreadable',
+    UNKNOWN_MEASUREMENT_FLAG: 'unknown measurement flag',
+    INVALID_VALUE: 'unreadable value',
+  },
+  REPORT_GENERATED: 'Generated {generated}. NOAA data accessed {access}; data may be revised.',
+  REPORT_GENERATED_NO_WEATHER: 'Generated {generated}.',
+  WALKWAY_SAME_AS_PLOW: 'Same as plow trigger',
+  TIERS_NOT_VALID: 'Not valid (tier-based estimates turned off)',
+  REPORT_STATIONS: 'Stations with records for the billed dates ({n}):',
+  REPORT_NO_STATIONS: 'No weather stations were needed for these lines.',
+  PRINT_BUTTON: 'Print / Save as PDF',
+  EXPORT_BUTTON: 'Export results CSV',
+});
+
 // Exact copy, SPEC §9.5.
 export const MESSAGES = Object.freeze({
   INVALID_ZIP_SHAPE: 'Enter a five-digit ZIP code.',

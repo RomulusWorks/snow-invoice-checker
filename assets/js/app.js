@@ -4,11 +4,13 @@ import { lookupZip, loadZctaData, isValidZipShape } from './zip.js';
 import { loadStationData, findEligibleStations } from './stations.js';
 import { createWeatherClient, NetworkError, HttpError, InvalidResponseError } from './weather-client.js';
 import { runChecks } from './checks.js';
-import { parseBilledServicesCsv, rowMessage } from './csv.js';
+import { parseBilledServicesCsv, rowMessage, buildResultsCsv, resultsCsvFilename } from './csv.js';
 import { createStorage } from './storage.js';
 import { DEMO_LABEL, DEMO_FORM, DEMO_ROWS, DEMO_STATIONS, DEMO_OBSERVATIONS } from './demo-data.js';
+import { buildReportModel, renderReport, renderSummary, summaryItems } from './report.js';
 import {
-  MESSAGES, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES,
+  MESSAGES, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES, SUMMARY_LABELS,
+  PHASE5_PENDING_COPY as P5,
 } from './constants.js';
 import {
   decimalToCents, parseDecimal, isRealIsoDate, formatCents, formatQuantity, formatInches, centsToDecimalText,
@@ -369,73 +371,138 @@ function startApp() {
   }
 
   // ---------- results ----------
+  let lastRun = null;
+
   function clearResults() {
-    $('results-content').replaceChildren();
+    lastRun = null;
+    $('results-body').replaceChildren();
+    $('results-summary').replaceChildren();
     $('results-content').hidden = true;
     $('results-empty').hidden = false;
     $('results-demo-label').hidden = true;
+    $('report').replaceChildren();
+    $('report-section').hidden = true;
   }
 
-  function td(text, className) {
-    const c = document.createElement('td');
-    c.textContent = text;
-    if (className) c.className = className;
-    return c;
+  function node(tag, className, ...children) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    for (const c of children) if (c != null) e.append(c);
+    return e;
   }
 
-  function renderResults({ results, summary }, billedRows, { demo }) {
-    const content = $('results-content');
-    content.replaceChildren();
-    const list = document.createElement('ul');
-    list.className = 'summary-list';
-    const item = (label, value) => {
-      const li = document.createElement('li');
-      const strong = document.createElement('strong');
-      strong.textContent = value;
-      li.append(strong, document.createTextNode(label));
-      return li;
-    };
-    list.append(
-      item('Total billed', formatCents(summary.totalBilledCents)),
-      item('Items worth questioning', String(summary.itemsWorthQuestioning)),
-      item('Estimated amount associated with items worth reviewing', formatCents(summary.estimatedReviewAmountCents)),
-    );
-    if (summary.amountUnavailableRows > 0) list.append(item('Amount unavailable', `${summary.amountUnavailableRows} rows`));
-    content.append(list);
+  function dayCell(day) {
+    if (day.usable) {
+      const marks = [day.label, day.sourceFlag ? `source ${day.sourceFlag}` : null].filter(Boolean).join(' · ');
+      return node('td', 'nowrap', `${formatInches(day.valueInches)} in.`, marks ? node('span', 'evidence-mark', ` ${marks}`) : null);
+    }
+    const reason = P5.EXCLUDED[day.excludedReason] ?? day.excludedReason;
+    const value = day.valueInches != null ? `${formatInches(day.valueInches)} in. ` : '— ';
+    return node('td', 'evidence-excluded', value, node('span', 'evidence-mark', `(${reason})`));
+  }
 
-    const wrap = document.createElement('div');
-    wrap.className = 'table-scroll';
-    wrap.setAttribute('role', 'region');
-    wrap.setAttribute('aria-label', 'Results by billed line');
-    wrap.tabIndex = 0;
-    const table = document.createElement('table');
-    table.className = 'data-table';
-    const head = document.createElement('thead');
-    head.innerHTML = '<tr><th scope="col">Date</th><th scope="col">Service</th><th scope="col">Qty</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Reason</th><th scope="col">Confidence</th><th scope="col">Review amount</th></tr>';
-    const body = document.createElement('tbody');
-    results.forEach((r, i) => {
+  function renderEvidence(r, run) {
+    const ev = r.evidence;
+    if (!ev.windowDates.length) return null;
+    const details = node('details', 'evidence');
+    details.append(node('summary', null, P5.EVIDENCE_SUMMARY));
+    details.append(node('p', null, fill(P5.EVIDENCE_WINDOW, { dates: ev.windowDates.join(', '), trigger: formatInches(ev.triggerInches) }),
+      ev.triggerInherited ? ` ${P5.EVIDENCE_TRIGGER_INHERITED}` : null));
+    if (ev.stationCount > 0) {
+      details.append(node('p', null, fill(P5.EVIDENCE_MAX_MEDIAN, {
+        max: formatInches(ev.maxSnowInches), median: formatInches(ev.medianSnowInches), count: ev.stationCount,
+      })));
+    }
+    // Storm total only when Rule B actually decided this line (OK or Worth questioning).
+    const b = ['OK', 'WORTH_QUESTIONING'].includes(r.ruleResults.B?.status) ? r.ruleResults.B.evidence : null;
+    if (b && b.eventSnowInches != null && b.stormDates) {
+      details.append(node('p', null, fill(P5.EVIDENCE_STORM, { eventSnow: formatInches(b.eventSnowInches), dates: `${b.stormDates[0]} to ${b.stormDates.at(-1)}` })));
+    }
+    if (ev.stations.length === 0) {
+      details.append(node('p', null, P5.EVIDENCE_NO_STATIONS));
+    } else {
+      const table = node('table', 'evidence-table');
+      const head = node('tr', null, ...['Station', 'ID', 'Distance', ...ev.windowDates, '3-day total'].map((h) => {
+        const th = node('th', null, h);
+        th.scope = 'col';
+        return th;
+      }));
+      table.append(node('thead', null, head));
+      const body = node('tbody');
+      for (const w of ev.stations) {
+        body.append(node('tr', null,
+          node('td', null, w.stationName ?? ''), node('td', 'nowrap', w.stationId),
+          node('td', 'num', w.distanceMiles == null ? '' : `${w.distanceMiles.toFixed(1)} mi`),
+          ...w.days.map(dayCell),
+          node('td', 'num', w.complete ? `${formatInches(w.totalSnowInches)} in.` : '—')));
+      }
+      table.append(body);
+      details.append(node('div', 'table-scroll', table));
+    }
+    details.append(node('p', 'evidence-access', run.demo ? DEMO_LABEL : fill(P5.EVIDENCE_ACCESS, { date: run.accessDate })));
+    return details;
+  }
+
+  function reviewAmountCell(r) {
+    const cell = node('td', 'num');
+    if (!(r.flaggedUnits > 0)) return cell;
+    cell.append(r.estimatedAmountCents == null ? '—' : formatCents(r.estimatedAmountCents));
+    if (r.amountIsRateEstimate) cell.append(node('span', 'rate-note', SUMMARY_LABELS.RATE_ESTIMATE));
+    return cell;
+  }
+
+  // run: { out, billedRows, contract, options, zip, radiusMiles, stations, observations, accessDate, generatedDate, demo }
+  function renderResults(run) {
+    lastRun = run;
+    const { out, billedRows } = run;
+    renderSummary($('results-summary'), summaryItems(out.summary, out.warnings));
+    const body = $('results-body');
+    body.replaceChildren();
+    out.results.forEach((r, i) => {
       const row = billedRows[i];
-      const tr = document.createElement('tr');
-      const statusCell = document.createElement('td');
-      const badge = document.createElement('span');
-      badge.className = `status-badge status-${r.status}`;
-      badge.textContent = STATUS_LABELS[r.status];
-      statusCell.append(badge);
-      tr.append(
-        td(row.date, 'nowrap'), td(row.serviceType), td(formatQuantity(row.quantity), 'num'), td(formatCents(row.amountChargedCents), 'num'),
-        statusCell, td(r.reasonText, 'reason'), td(r.confidence ?? ''),
-        td(r.flaggedUnits > 0 ? (r.estimatedAmountCents == null ? '' : formatCents(r.estimatedAmountCents)) : '', 'num'),
-      );
-      body.append(tr);
+      body.append(node('tr', null,
+        node('td', 'nowrap', row.date), node('td', null, row.serviceType), node('td', 'num', formatQuantity(row.quantity)),
+        node('td', 'num', formatCents(row.amountChargedCents)),
+        node('td', 'nowrap', node('span', `status-badge status-${r.status}`, STATUS_LABELS[r.status])),
+        node('td', 'reason', r.reasonText), node('td', null, r.confidence ?? ''), reviewAmountCell(r)));
+      const evidence = renderEvidence(r, run);
+      if (evidence) {
+        const td = node('td', null, evidence);
+        td.colSpan = 8;
+        body.append(node('tr', 'evidence-row', td));
+      }
     });
-    table.append(head, body);
-    wrap.append(table);
-    content.append(wrap);
-
     $('results-demo-label').textContent = DEMO_LABEL;
-    $('results-demo-label').hidden = !demo;
+    $('results-demo-label').hidden = !run.demo;
     $('results-empty').hidden = true;
-    content.hidden = false;
+    $('results-content').hidden = false;
+
+    const observed = new Set(run.observations.map((o) => o.stationId));
+    renderReport($('report'), buildReportModel({
+      results: out.results, summary: out.summary, warnings: out.warnings, billedRows, contract: run.contract,
+      zip: run.zip, radiusMiles: run.radiusMiles, seasonComplete: run.options.seasonComplete,
+      stationsUsed: run.stations.filter((s) => observed.has(s.id)), generatedDate: run.generatedDate,
+      accessDate: run.accessDate, demo: run.demo, demoLabel: DEMO_LABEL,
+    }));
+    $('report-section').hidden = false;
+  }
+
+  // Local calendar date (YYYY-MM-DD) for "generated", "accessed" and export filenames.
+  function localIsoDate(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function exportCsv() {
+    if (!lastRun) return;
+    const text = buildResultsCsv(lastRun.out.results, lastRun.billedRows);
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = resultsCsvFilename(localIsoDate());
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   // ---------- demo mode ----------
@@ -448,10 +515,14 @@ function startApp() {
     state.demo = true;
     $('demo-banner-label').textContent = DEMO_LABEL;
     $('demo-banner').hidden = false;
-    const { contract, options } = validateContractForm(readForm());
+    const values = readForm();
+    const { contract, options } = validateContractForm(values);
     const { billedRows } = validateRows(state.rows);
     const out = runChecks({ billedRows, contract, observations: DEMO_OBSERVATIONS, stations: DEMO_STATIONS, options });
-    renderResults(out, billedRows, { demo: true });
+    renderResults({
+      out, billedRows, contract, options, zip: values.zip, radiusMiles: Number(values.radius), stations: DEMO_STATIONS,
+      observations: DEMO_OBSERVATIONS, accessDate: null, generatedDate: localIsoDate(), demo: true,
+    });
     $('location-method').hidden = true;
   }
 
@@ -523,10 +594,11 @@ function startApp() {
       $('location-method').hidden = false;
 
       const weatherRows = rowsNeedingWeather(billedRows, contract);
+      const radiusMiles = Number(values.radius);
       let stations = [];
       let observations = [];
+      let accessDate = null;
       if (weatherRows.length > 0) {
-        const radiusMiles = Number(values.radius);
         const weatherDates = weatherRows.map((r) => r.date);
         const { stations: all } = await getStations();
         stations = findEligibleStations({ centroid: location, stations: all, radiusMiles, billedDates: weatherDates });
@@ -536,10 +608,15 @@ function startApp() {
           return;
         }
         observations = await weatherClient.fetchObservations(stations.map((s) => s.id), weatherDates);
+        accessDate = localIsoDate();
+        $('footer-access-date').textContent = accessDate;
       }
       const out = runChecks({ billedRows, contract, observations, stations, options });
       announce('');
-      renderResults(out, billedRows, { demo: false });
+      renderResults({
+        out, billedRows, contract, options, zip, radiusMiles, stations, observations, accessDate,
+        generatedDate: localIsoDate(), demo: false,
+      });
       $('results').focus();
     } catch (err) {
       announce(errorMessage(err));
@@ -665,7 +742,11 @@ function startApp() {
     persist();
   });
 
+  $('export-csv').addEventListener('click', exportCsv);
+  $('print-report').addEventListener('click', () => window.print());
+
   // ---------- start ----------
+  $('footer-access-date').textContent = localIsoDate();
   writeForm(DEFAULT_FORM);
   renderRows();
   restoreSaved();
