@@ -166,15 +166,6 @@ test('SPEC 11 (SYNTHETIC): partial window (only D, D+1) with 2.3 in on D, no com
   assert.equal(results[0].evidence.stationCount, 0);
 });
 
-test('SPEC 11 under per-push (literal §7.4 step 4 + §7.9 step 2): Rule A OK, Rule B has no valid storm total -> NOT_ENOUGH_DATA', () => {
-  const stations = [st('USSYN1', 3)];
-  const observations = windowObs('USSYN1', D, [undefined, 2.3, 0]);
-  const { results } = run({ rows: [row(D)], stations, observations });
-  assert.equal(results[0].ruleResults.A.status, 'OK');
-  assert.equal(results[0].ruleResults.B.status, 'NOT_ENOUGH_DATA');
-  assert.equal(results[0].status, 'NOT_ENOUGH_DATA');
-  assert.equal(results[0].flaggedUnits, 0);
-});
 
 test('SPEC 12 (SYNTHETIC): partial window (only D, D+1) values 0, no complete windows -> NOT_ENOUGH_DATA', () => {
   const stations = [st('USSYN1', 3)];
@@ -414,6 +405,121 @@ test('SPEC 32: storm grouping Dec 7, Dec 9, Dec 13 -> [Dec 7, Dec 9], [Dec 13]',
   assert.deepEqual(storms, [['2025-12-07', '2025-12-09'], ['2025-12-13']]);
 });
 
+// ---------------------------------------------------------------- SPEC v1.2 (Phase 3.5) tests 45-51
+// Partial windows only: each station has no record on D-1, so no complete window exists.
+function partialSnow(dates, inches = 2.3) {
+  const stations = [st('USSYNPART1', 3)];
+  const observations = dates.flatMap((d) => [synObs('USSYNPART1', d, synEl(inches)), synObs('USSYNPART1', addDaysIso(d, 1), synEl(0))]);
+  return { stations, observations };
+}
+function addDaysIso(iso, n) {
+  return new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+}
+const OUTSIDE_SEASON_COPY = 'This date is outside the contract season entered, so it is not counted toward the allowance or compared with weather records. Only duplicate entries are checked.';
+
+test('SPEC 45 (SYNTHETIC): per-push, extra 1, single push qty 1, partial window 2.3 in, no complete storm window -> OK; Rule B NOT_APPLIED', () => {
+  const { results } = run({ rows: [row(D, 'plow', 1, 42500)], contract: perPush({ extraPushesAllowedPerStorm: 1 }), ...partialSnow([D]) });
+  const x = results[0];
+  assert.equal(x.ruleResults.A.status, 'OK');
+  assert.equal(x.ruleResults.B.status, 'NOT_APPLIED');
+  assert.equal(x.ruleResults.B.code, 'RULE_B_CANNOT_FLAG');
+  assert.equal(x.status, 'OK');
+  assert.deepEqual(x.reasonCodes, ['NO_ISSUE']);
+  assert.ok(!x.reasonText.includes('RULE_B_CANNOT_FLAG'));
+  assert.equal(x.flaggedUnits, 0);
+});
+
+test('SPEC 46 (SYNTHETIC): per-push, extra 1, storm with 2 pushes, no complete storm window, Rule A OK -> OK; Rule B NOT_APPLIED', () => {
+  const rows = [row('2025-12-07', 'plow', 1), row('2025-12-08', 'plow', 1)];
+  const { results } = run({ rows, contract: perPush({ extraPushesAllowedPerStorm: 1 }), ...partialSnow(['2025-12-07', '2025-12-08']) });
+  for (const x of results) {
+    assert.equal(x.ruleResults.A.status, 'OK');
+    assert.equal(x.ruleResults.B.status, 'NOT_APPLIED');
+    assert.equal(x.status, 'OK');
+  }
+});
+
+test('SPEC 47 (SYNTHETIC): per-push, extra 1, storm with 3 pushes, no complete storm window, Rule A OK -> NOT_ENOUGH_DATA (unchanged)', () => {
+  const rows = [row('2025-12-07', 'plow', 2), row('2025-12-08', 'plow', 1)];
+  const { results } = run({ rows, contract: perPush({ extraPushesAllowedPerStorm: 1 }), ...partialSnow(['2025-12-07', '2025-12-08']) });
+  for (const x of results) {
+    assert.equal(x.ruleResults.A.status, 'OK');
+    assert.equal(x.ruleResults.B.status, 'NOT_ENOUGH_DATA');
+    assert.equal(x.status, 'NOT_ENOUGH_DATA');
+    assert.deepEqual(x.reasonCodes, ['INSUFFICIENT_DATA']);
+  }
+});
+
+test('SPEC 48 (SYNTHETIC): per-push, extra 0, single push qty 1, no complete storm window, Rule A OK -> OK; Rule B NOT_APPLIED', () => {
+  const { results } = run({ rows: [row(D, 'plow', 1)], contract: perPush({ extraPushesAllowedPerStorm: 0 }), ...partialSnow([D]) });
+  assert.equal(results[0].ruleResults.B.status, 'NOT_APPLIED');
+  assert.equal(results[0].status, 'OK');
+});
+
+test('SPEC 45-48 note (SYNTHETIC): tier contract keeps tier pricing when Rule B is NOT_APPLIED', () => {
+  const tiers = [
+    { minSnowInches: 0, maxSnowInchesExclusive: 2, chargePerPushCents: 9500 },
+    { minSnowInches: 2, maxSnowInchesExclusive: null, chargePerPushCents: 14500 },
+  ];
+  // Single push on a 0-snow day with 3 complete stations: Rule A flags, Rule B NOT_APPLIED, eventSnow 0 -> tier 0-2.
+  const { results } = run({
+    rows: [row(D, 'plow', 1, null)],
+    contract: { type: 'PER_INCH_TIERS', plowTriggerInches: 2, extraPushesAllowedPerStorm: 1, tiers },
+    ...threeStations(D, [0, 0, 0]),
+  });
+  assert.equal(results[0].ruleResults.B.status, 'NOT_APPLIED');
+  assert.equal(results[0].status, 'WORTH_QUESTIONING');
+  assert.equal(results[0].estimatedAmountCents, 9500);
+  assert.equal(results[0].amountIsRateEstimate, true);
+});
+
+test('SPEC 49 (SYNTHETIC): allowance Nov 1-Apr 30, plow on May 15, not duplicated -> NOT_CHECKED, OUTSIDE_SEASON, not counted, no weather', () => {
+  const rows = [row('2026-05-15', 'plow', 1, 42500), row('2026-01-15', 'plow', 1, 42500)];
+  const contract = allowanceContract({ seasonStart: '2025-11-01', seasonEnd: '2026-04-30', pushAllowance: 1, overageRateCents: 3000 });
+  const { results, summary } = run({ rows, contract, ...threeStations('2026-05-15', [0, 0, 0]), seasonComplete: true });
+  const may = results[0];
+  assert.equal(may.status, 'NOT_CHECKED');
+  assert.deepEqual(may.reasonCodes, ['OUTSIDE_SEASON']);
+  assert.equal(may.reasonText, OUTSIDE_SEASON_COPY);
+  assert.equal(may.confidence, null);
+  assert.equal(may.ruleResults.A.status, 'NOT_APPLICABLE');
+  assert.equal(may.ruleResults.C.status, 'NOT_APPLICABLE');
+  assert.deepEqual(may.evidence.stations, [], 'no weather check run');
+  assert.equal(may.allowanceExcessUnits, 0);
+  // Only the in-season push counts: 1 push vs allowance 1 -> no excess.
+  assert.deepEqual(summary.contractualOverage, { excessUnits: 0, overageCents: 0 });
+});
+
+test('SPEC 50 (SYNTHETIC): same contract, two identical plow lines on May 15 -> both WQ, DUPLICATE_BILLING HIGH, includes OUTSIDE_SEASON, not counted', () => {
+  const rows = [row('2026-05-15', 'plow', 1, 42500), row('2026-05-15', 'plow', 1, 42500)];
+  const contract = allowanceContract({ seasonStart: '2025-11-01', seasonEnd: '2026-04-30', pushAllowance: 0, overageRateCents: 3000 });
+  const { results, summary } = run({ rows, contract, seasonComplete: true });
+  for (const x of results) {
+    assert.equal(x.status, 'WORTH_QUESTIONING');
+    assert.deepEqual(x.reasonCodes, ['DUPLICATE_BILLING', 'OUTSIDE_SEASON']);
+    assert.equal(x.confidence, 'HIGH');
+    assert.equal(x.allowanceExcessUnits, 0);
+    assert.equal(x.ruleResults.C.status, 'NOT_APPLICABLE');
+    assert.ok(x.reasonText.endsWith(OUTSIDE_SEASON_COPY));
+    assert.equal(x.estimatedAmountCents, 42500);
+  }
+  // Allowance 0 and nothing counted -> no excess even though 2 plow lines exist.
+  assert.deepEqual(summary.contractualOverage, { excessUnits: 0, overageCents: 0 });
+});
+
+test('SPEC 51 (SYNTHETIC): same contract, salt on May 15 -> NOT_CHECKED, SERVICE_TYPE_NOT_CHECKED', () => {
+  const contract = allowanceContract({ seasonStart: '2025-11-01', seasonEnd: '2026-04-30' });
+  const { results } = run({ rows: [row('2026-05-15', 'salt', 1, 8500)], contract });
+  assert.equal(results[0].status, 'NOT_CHECKED');
+  assert.deepEqual(results[0].reasonCodes, ['SERVICE_TYPE_NOT_CHECKED']);
+});
+
+test('v1.2: walkway outside the season on an allowance contract also gets OUTSIDE_SEASON (SYNTHETIC)', () => {
+  const contract = allowanceContract({ seasonStart: '2025-11-01', seasonEnd: '2026-04-30', allowanceCountsWalkway: true });
+  const { results } = run({ rows: [row('2025-10-20', 'walkway', 1)], contract });
+  assert.deepEqual(results[0].reasonCodes, ['OUTSIDE_SEASON']);
+});
+
 // ---------------------------------------------------------------- additional rule checks
 test('Rule A confidence: MEDIUM and LOW boundaries (SYNTHETIC)', () => {
   // 2 stations within 15 mi, gap 0.5 -> MEDIUM.
@@ -432,9 +538,10 @@ test('Rule A confidence: MEDIUM and LOW boundaries (SYNTHETIC)', () => {
 
 test('Rule B: no valid storm totals -> NOT_ENOUGH_DATA for every row in the storm (SYNTHETIC)', () => {
   // Dec 7 window complete and snowy (Rule A OK) but Dec 9 missing -> storm window incomplete.
+  // extra = 0 so billedPushes (2) > 1 + extra and Rule B can flag (v1.2 skip does not apply).
   const stations = [st('USSYN1', 3)];
   const observations = ['2025-12-06', '2025-12-07', '2025-12-08'].map((d, i) => synObs('USSYN1', d, synEl([0, 4, 0][i])));
-  const { results } = run({ rows: [row('2025-12-07'), row('2025-12-08')], stations, observations });
+  const { results } = run({ rows: [row('2025-12-07'), row('2025-12-08')], contract: perPush({ extraPushesAllowedPerStorm: 0 }), stations, observations });
   for (const x of results) {
     assert.equal(x.ruleResults.B.status, 'NOT_ENOUGH_DATA');
     assert.equal(x.status, 'NOT_ENOUGH_DATA');
@@ -442,7 +549,8 @@ test('Rule B: no valid storm totals -> NOT_ENOUGH_DATA for every row in the stor
 });
 
 test('Rule B: event below trigger -> not applied, Rule A covers it (SYNTHETIC)', () => {
-  const { results } = run({ rows: [row(D), row(D)], ...threeStations(D, [0, 0, 0]) });
+  // extra = 0 so billedPushes (2) > 1 + extra and the event-below-trigger path is reached.
+  const { results } = run({ rows: [row(D), row(D)], contract: perPush({ extraPushesAllowedPerStorm: 0 }), ...threeStations(D, [0, 0, 0]) });
   assert.equal(results[0].ruleResults.B.status, 'NOT_APPLICABLE');
   assert.deepEqual(results[0].reasonCodes, ['NO_SIGNIFICANT_SNOW', 'DUPLICATE_BILLING']);
 });
@@ -505,13 +613,6 @@ test('money: fractional per-unit amounts round once per row in integer cents (SY
   const third = run({ rows: [row('2025-12-07', 'plow', 1, 10000), row('2025-12-08', 'plow', 3, 10000)], ...stormFixture() });
   assert.equal(third.results[1].flaggedUnits, 1);
   assert.equal(third.results[1].estimatedAmountCents, 3333);
-});
-
-test('allowance contract: plow row outside the season -> NOT_CHECKED with no invented reason, warning raised (SYNTHETIC)', () => {
-  const { results, warnings } = run({ rows: [row('2026-05-15', 'plow', 1, 42500)], contract: allowanceContract(), ...threeStations('2026-05-15', [0, 0, 0]) });
-  assert.equal(results[0].status, 'NOT_CHECKED');
-  assert.deepEqual(results[0].reasonCodes, []);
-  assert.ok(warnings.some((w) => w.code === 'ROW_OUTSIDE_SEASON_NOT_CHECKED'));
 });
 
 test('allowance: not exceeded and season not marked complete -> "season may be incomplete" warning', () => {

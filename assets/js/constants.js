@@ -36,6 +36,11 @@ export const STATUS = Object.freeze({
 // Per-rule status for a rule that does not apply to a row (internal; never shown as a row status).
 export const RULE_NOT_APPLICABLE = 'NOT_APPLICABLE';
 
+// Per-rule status when Rule B is skipped because it cannot flag (SPEC v1.2, §7.4). Internal only.
+export const RULE_NOT_APPLIED = 'NOT_APPLIED';
+// Internal per-rule code for RULE_NOT_APPLIED (never shown to the user).
+export const RULE_B_CANNOT_FLAG = 'RULE_B_CANNOT_FLAG';
+
 export const CONFIDENCE = Object.freeze({ HIGH: 'HIGH', MEDIUM: 'MEDIUM', LOW: 'LOW' });
 
 export const REASON_CODES = Object.freeze({
@@ -47,6 +52,7 @@ export const REASON_CODES = Object.freeze({
   NO_ISSUE: 'NO_ISSUE',
   SERVICE_TYPE_NOT_CHECKED: 'SERVICE_TYPE_NOT_CHECKED',
   SEASONAL_UNLIMITED_DUPLICATE_ONLY: 'SEASONAL_UNLIMITED_DUPLICATE_ONLY',
+  OUTSIDE_SEASON: 'OUTSIDE_SEASON',
 });
 
 // Exact copy, SPEC §9.2.
@@ -73,6 +79,7 @@ export const REASON_TEMPLATES = Object.freeze({
   SERVICE_TYPE_NOT_CHECKED: 'Salt and other services are not compared with weather records in this version. Only duplicate entries are checked.',
   SEASONAL_UNLIMITED_DUPLICATE_ONLY: 'This contract is a flat seasonal fee with unlimited service. Individual snowfall totals do not determine a per-push charge under the terms entered, so this tool only checks duplicate-looking entries.',
   INSUFFICIENT_DATA: 'Nearby station records were missing or incomplete for {dates}. No conclusion was made.',
+  OUTSIDE_SEASON: 'This date is outside the contract season entered, so it is not counted toward the allowance or compared with weather records. Only duplicate entries are checked.',
 });
 
 // Evidence labels named in SPEC §3.5.

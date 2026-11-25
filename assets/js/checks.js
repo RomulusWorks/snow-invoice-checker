@@ -1,7 +1,7 @@
 // Pure screening rules (SPEC §6-§9). No DOM, fetch, storage, system clock, or global mutable state.
 // Inputs are normalized observations (weather-normalizer.js) and eligible stations (stations.js).
 import {
-  CONTRACT_TYPES, SERVICE_TYPES, STATUS, RULE_NOT_APPLICABLE, CONFIDENCE, REASON_CODES,
+  CONTRACT_TYPES, SERVICE_TYPES, STATUS, RULE_NOT_APPLICABLE, RULE_NOT_APPLIED, RULE_B_CANNOT_FLAG, CONFIDENCE, REASON_CODES,
   STATUS_COPY, REASON_TEMPLATES, EVIDENCE_LABELS,
 } from './constants.js';
 
@@ -229,6 +229,19 @@ export function evaluatePushCount(stormRows, contract, observations, stations) {
   const windows = computeStationWindows(observations, dates, stations);
   const valid = windows.filter((w) => w.complete); // usable on every storm date (A days invalidate)
   const perRow = new Map();
+  const billedPushes = sum(stormRows.map((r) => r.quantity));
+
+  // SPEC v1.2 (§7.4 step 0): basePushes >= 1, so allowedPushes >= 1 + extra. A storm with
+  // billedPushes <= 1 + extra can never exceed it, so Rule B is not applied and cannot
+  // contribute NOT_ENOUGH_DATA. eventSnowInches is still reported for tier pricing (§4.4).
+  if (billedPushes <= 1 + contract.extraPushesAllowedPerStorm) {
+    const eventSnowInches = valid.length ? Math.max(...valid.map((w) => w.totalSnowInches)) : null;
+    for (const r of stormRows) {
+      perRow.set(r.id, { status: RULE_NOT_APPLIED, code: RULE_B_CANNOT_FLAG, evidence: { eventSnowInches, stormDates: dates, billedPushes } });
+    }
+    return { status: RULE_NOT_APPLIED, eventSnowInches, dates, perRow };
+  }
+
   if (valid.length === 0) {
     for (const r of stormRows) perRow.set(r.id, { status: STATUS.NOT_ENOUGH_DATA, code: REASON_CODES.INSUFFICIENT_DATA, dates });
     return { status: STATUS.NOT_ENOUGH_DATA, eventSnowInches: null, dates, perRow };
@@ -242,7 +255,6 @@ export function evaluatePushCount(stormRows, contract, observations, stations) {
   }
   const basePushes = Math.max(1, Math.ceil(eventSnowInches / trigger));
   const allowedPushes = basePushes + contract.extraPushesAllowedPerStorm;
-  const billedPushes = sum(stormRows.map((r) => r.quantity));
   const excess = billedPushes - allowedPushes;
   const fullEvidence = { ...evidence, basePushes, allowedPushes, billedPushes, excess: Math.max(0, excess) };
   const assigned = excess > 0 ? assignExcessNewestFirst(stormRows, excess) : new Map();
@@ -350,7 +362,12 @@ export function evaluateDuplicates(rows) {
 }
 
 // ---------------------------------------------------------------- combination (SPEC §7.9)
-const isWeatherRuleApplicable = (res) => res && res.status !== RULE_NOT_APPLICABLE;
+// NOT_APPLICABLE (rule does not apply) and NOT_APPLIED (Rule B cannot flag, v1.2) are both ignored.
+const isWeatherRuleApplicable = (res) => res && res.status !== RULE_NOT_APPLICABLE && res.status !== RULE_NOT_APPLIED;
+
+// SPEC v1.2: plow/walkway row on an allowance contract dated outside the season.
+const isOutsideSeasonRow = (row, contract) => contract.type === CONTRACT_TYPES.SEASONAL_ALLOWANCE
+  && (row.serviceType === 'plow' || row.serviceType === 'walkway') && !inSeason(row, contract);
 
 export function combineResults(row, ruleResults, contract) {
   const { A, B, C, E } = ruleResults;
@@ -358,14 +375,22 @@ export function combineResults(row, ruleResults, contract) {
   const flaggedUnits = Math.max(0, ...[A, B, E].filter((r) => r && r.status === STATUS.WORTH_QUESTIONING).map((r) => r.flaggedUnits));
   const allowanceExcessUnits = C && C.status === STATUS.WORTH_QUESTIONING ? C.allowanceExcessUnits : 0;
   const base = { rowId: row.id, flaggedUnits, allowanceExcessUnits, ruleResults };
+  const outsideSeason = isOutsideSeasonRow(row, contract);
 
   if (flagging.length > 0) {
     const confidence = flagging.map((r) => r.confidence).reduce((a, b) => (CONFIDENCE_RANK[b] > CONFIDENCE_RANK[a] ? b : a));
+    const reasonCodes = flagging.map((r) => r.code);
+    const texts = flagging.map((r) => fillTemplate(r.code, r.params));
+    if (outsideSeason) {
+      // Only Rule E can flag here; OUTSIDE_SEASON explains why weather/allowance were not checked.
+      reasonCodes.push(REASON_CODES.OUTSIDE_SEASON);
+      texts.push(fillTemplate(REASON_CODES.OUTSIDE_SEASON));
+    }
     return {
       ...base,
       status: STATUS.WORTH_QUESTIONING,
-      reasonCodes: flagging.map((r) => r.code),
-      reasonText: flagging.map((r) => fillTemplate(r.code, r.params)).join(' '),
+      reasonCodes,
+      reasonText: texts.join(' '),
       confidence,
     };
   }
@@ -385,8 +410,7 @@ export function combineResults(row, ruleResults, contract) {
     let codes = [];
     if (contract.type === CONTRACT_TYPES.SEASONAL_UNLIMITED) codes = [REASON_CODES.SEASONAL_UNLIMITED_DUPLICATE_ONLY];
     else if (row.serviceType === 'salt' || row.serviceType === 'other') codes = [REASON_CODES.SERVICE_TYPE_NOT_CHECKED];
-    // Otherwise (allowance-contract plow/walkway row outside the season) SPEC §9.3 defines no
-    // reason code or copy; none is invented here. runChecks reports a warning.
+    else if (outsideSeason) codes = [REASON_CODES.OUTSIDE_SEASON];
     return {
       ...base,
       status: STATUS.NOT_CHECKED,
@@ -536,7 +560,6 @@ export function runChecks({ billedRows, contract, observations, stations, option
   const results = billedRows.map((row) => {
     const weatherEligible = (row.serviceType === 'plow' || row.serviceType === 'walkway') && RULE_A_CONTRACTS.has(contract.type);
     const aApplies = weatherEligible && (!isAllowance || inSeason(row, contract));
-    if (weatherEligible && isAllowance && !aApplies) warnings.push({ code: 'ROW_OUTSIDE_SEASON_NOT_CHECKED', rowId: row.id });
 
     const windows = aApplies ? computeStationWindows(observations, getDateWindow(row.date), stations) : [];
     const A = aApplies ? evaluateNoSignificantSnow(row, contract, windows) : { status: RULE_NOT_APPLICABLE };

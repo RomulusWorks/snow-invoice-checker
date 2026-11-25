@@ -32,6 +32,13 @@
 | 8 | Code blocks fixed (`/\r?\n/` regex, `'\n'` strings, wrapped commands). Data JSON written **compact**. `.gitignore` added. Folder map lists every test file. | Copy-paste correctness; file size; keep raw downloads out of the site. |
 | 9 | Weather requests run with **max 2 concurrent** batches. | Dense areas can have 100+ stations within 25 miles. |
 
+**v1.2 decisions (Phase 3.5, approved by the product owner)**
+
+| # | Change | Why |
+|---|---|---|
+| 10 | Rule B is **not applied** (internal status `NOT_APPLIED`, internal code `RULE_B_CANNOT_FLAG`, never shown to the user) for a storm whose `billedPushes <= 1 + extraPushesAllowedPerStorm`. It then cannot contribute NOT_ENOUGH_DATA. Storms with more pushes keep the existing rule, including NOT_ENOUGH_DATA when no complete storm window exists. | `basePushes` is always ≥ 1, so `allowedPushes` ≥ 1 + extra; such a storm can never exceed it. Without this, a line where snow clearly fell (Rule A OK) showed "Not enough data" only because Rule B lacked a full storm window. |
+| 11 | New reason code **`OUTSIDE_SEASON`** for plow and walkway rows on a seasonal-allowance contract dated before `seasonStart` or after `seasonEnd`. Rules A and C do not run; Rule E still runs. Not duplicated → NOT_CHECKED with `OUTSIDE_SEASON`; duplicated → WORTH_QUESTIONING with `DUPLICATE_BILLING` and `OUTSIDE_SEASON`. Salt/other rows outside the season are unchanged (`SERVICE_TYPE_NOT_CHECKED`). | v1.1 left these rows NOT_CHECKED with no reason code or copy. |
+
 ---
 
 ## 1. Product definition and boundaries
@@ -591,7 +598,7 @@ A station's window is **complete** when SNOW is `usable` on all three dates (tra
 
 ### 7.3 Rule A — no significant snow
 
-Applies to `plow` and `walkway` rows under per-push, per-event, per-inch tiers, and seasonal-allowance (rows inside the season only). Not applied to unlimited contracts.
+Applies to `plow` and `walkway` rows under per-push, per-event, per-inch tiers, and seasonal-allowance (rows inside the season only). Not applied to unlimited contracts. *(v1.2)* Seasonal-allowance plow/walkway rows outside the season get reason code `OUTSIDE_SEASON` (§7.5, §7.9).
 
 ```js
 function evaluateNoSignificantSnow(row, contract, windows) {
@@ -618,6 +625,7 @@ Comparison is strictly `maxSnow < trigger` → flag. Compare at full precision; 
 
 Applies to `plow` rows under **per-push** and **per-inch tiers** only.
 
+0. *(v1.2)* For each storm (grouped as in step 1), if `billedPushes <= 1 + extraPushesAllowedPerStorm`, Rule B is **not applied** to every row in that storm (internal status `NOT_APPLIED`, internal code `RULE_B_CANNOT_FLAG`, never shown to the user) and steps 2–6 do not decide its result; it cannot contribute NOT_ENOUGH_DATA. Justification: `basePushes` is always ≥ 1, so `allowedPushes` ≥ 1 + extra, and such a storm can never exceed it. `eventSnowInches` is still computed when available, for tier selection (§4.4). Storms with `billedPushes > 1 + extra` follow steps 1–6 unchanged.
 1. Sort plow rows by date. Group into storms: a new storm starts when the next plow date is more than 2 calendar days after the previous plow date in the group.
 2. Storm window dates = union of `windowDates(D)` for every D in the storm (each station-day counted once).
 3. A station's storm total is valid only if SNOW is usable on every date of the storm window (accumulation days make that station invalid for this rule).
@@ -655,7 +663,7 @@ if excess > 0:
 
 Confidence: HIGH if "I entered every billed push" is checked; otherwise MEDIUM. Never claim the season stayed within allowance unless the user checked that box (if not exceeded and box unchecked, Rule C is OK but the summary notes "season may be incomplete").
 
-Rows outside the season appear in results but don't count toward the allowance.
+Rows outside the season appear in results but don't count toward the allowance. *(v1.2)* Plow and walkway rows outside the season: Rules A and C do not run; Rule E still runs. If not flagged as a duplicate → NOT_CHECKED with reason code `OUTSIDE_SEASON`. If flagged as a duplicate → WORTH_QUESTIONING with `DUPLICATE_BILLING`, and `reasonCodes` also includes `OUTSIDE_SEASON`. Salt and other rows outside the season keep `SERVICE_TYPE_NOT_CHECKED`.
 
 ### 7.6 Rule E — duplicate billing
 
@@ -674,9 +682,9 @@ Only Rule E runs. Rows not flagged as duplicates → `NOT_CHECKED`, code `SEASON
 
 ### 7.9 Combining rules into one result per row
 
-1. Any rule WORTH_QUESTIONING → row status WORTH_QUESTIONING. `reasonCodes` lists all matched codes; `reasonText` joins their copy. Row `confidence` = the highest confidence among flagging rules.
-2. Else, if any applicable weather rule returned NOT_ENOUGH_DATA → NOT_ENOUGH_DATA.
-3. Else, if no weather rule was applicable (salt/other/unlimited) → NOT_CHECKED.
+1. Any rule WORTH_QUESTIONING → row status WORTH_QUESTIONING. `reasonCodes` lists all matched codes; `reasonText` joins their copy. Row `confidence` = the highest confidence among flagging rules. *(v1.2)* For a seasonal-allowance plow/walkway row outside the season, `OUTSIDE_SEASON` is appended to `reasonCodes` (and its copy to `reasonText`); it does not affect confidence.
+2. Else, if any applicable weather rule returned NOT_ENOUGH_DATA → NOT_ENOUGH_DATA. *(v1.2)* A rule with status `NOT_APPLIED` (Rule B, §7.4 step 0) is ignored here, exactly like a rule that does not apply to the contract type.
+3. Else, if no weather rule was applicable (salt/other/unlimited/outside the allowance season) → NOT_CHECKED. *(v1.2)* Reason code: `SEASONAL_UNLIMITED_DUPLICATE_ONLY` for unlimited contracts; `SERVICE_TYPE_NOT_CHECKED` for salt/other; `OUTSIDE_SEASON` for seasonal-allowance plow/walkway rows outside the season.
 4. Else → OK.
 
 Row `flaggedUnits` = **max** of `flaggedUnits` from rules A, B and E (never summed). Rule C units are tracked separately in `allowanceExcessUnits`.
@@ -734,6 +742,7 @@ Never round confidence up.
 | SERVICE_TYPE_NOT_CHECKED | "Salt and other services are not compared with weather records in this version. Only duplicate entries are checked." |
 | SEASONAL_UNLIMITED_DUPLICATE_ONLY | "This contract is a flat seasonal fee with unlimited service. Individual snowfall totals do not determine a per-push charge under the terms entered, so this tool only checks duplicate-looking entries." |
 | INSUFFICIENT_DATA | "Nearby station records were missing or incomplete for {dates}. No conclusion was made." |
+| OUTSIDE_SEASON | "This date is outside the contract season entered, so it is not counted toward the allowance or compared with weather records. Only duplicate entries are checked." |
 
 ### 9.4 Disclaimer (app, visible before use, and on every report)
 
@@ -966,6 +975,13 @@ Node built-in runner (`node:test`, `node:assert/strict`). Offline and determinis
 | 42 | Client: second call same key | Served from cache, fetch called once |
 | 43 | Normalizer on live fixture | Field-by-field match to raw values; flags parsed per confirmed layout |
 | 44 | Results CSV export | All fields quoted; header exact; one line per row |
+| 45 | *(v1.2)* Per-push, extra=1, single plow push qty 1; Rule A has a qualifying partial window ≥ trigger (2.3 in); no complete storm window | Row OK (not NOT_ENOUGH_DATA); Rule B = NOT_APPLIED |
+| 46 | *(v1.2)* Per-push, extra=1, storm with 2 pushes total, no complete storm window, Rule A OK | Row OK; Rule B = NOT_APPLIED |
+| 47 | *(v1.2)* Per-push, extra=1, storm with 3 pushes total, no complete storm window, Rule A OK | NOT_ENOUGH_DATA (existing behavior preserved) |
+| 48 | *(v1.2)* Per-push, extra=0, single push qty 1, no complete storm window, Rule A OK | OK; Rule B = NOT_APPLIED (1 ≤ 1 + 0) |
+| 49 | *(v1.2)* Allowance contract, season Nov 1 – Apr 30, plow on May 15, not duplicated | NOT_CHECKED, reasonCodes = [OUTSIDE_SEASON], exact §9.3 copy, not counted toward allowance, no weather check run |
+| 50 | *(v1.2)* Same contract, two identical plow lines on May 15 | Both WORTH_QUESTIONING, DUPLICATE_BILLING HIGH, reasonCodes includes OUTSIDE_SEASON, not counted toward allowance |
+| 51 | *(v1.2)* Same contract, salt on May 15 | NOT_CHECKED, SERVICE_TYPE_NOT_CHECKED |
 
 ### 13.1 Fixture rules
 
