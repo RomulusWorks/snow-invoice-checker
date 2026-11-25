@@ -110,7 +110,9 @@ test('disclaimer, attribution and waitlist link match SPEC and index.html', asyn
   assert.ok(spec.includes(`> ${DISCLAIMER}`), 'SPEC §9.4');
   assert.ok(html.includes(DISCLAIMER), 'index.html disclaimer');
   assert.ok(spec.includes(`"${ATTRIBUTION_TEMPLATE.replace('{date}', '[date]')}"`), 'SPEC §3.3');
-  assert.equal(WAITLIST_URL, 'https://forms.gle/REPLACE_WITH_REAL_FORM_ID');
+  assert.equal(WAITLIST_URL, 'https://forms.gle/D6PrYXRA6vjCmx3X9');
+  assert.ok(html.includes(`id="waitlist-link" href="${WAITLIST_URL}"`), 'index.html link matches WAITLIST_URL');
+  assert.ok(!html.includes('REPLACE_WITH_REAL_FORM_ID'), 'no placeholder left');
   assert.ok(html.includes('Want a full line-by-line audit of your contract and invoices?'));
   assert.ok(/<a [^>]*id="waitlist-link"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/.test(html));
   assert.ok(spec.includes(MESSAGES.REPORT_TRUNCATION));

@@ -92,7 +92,7 @@ export const EVIDENCE_LABELS = Object.freeze({
 
 // ---- Report, export, waitlist (SPEC §3.3, §9.4, §10.3, §12) ----
 export const REPORT_MAX_ROWS = 18;
-export const WAITLIST_URL = 'https://forms.gle/REPLACE_WITH_REAL_FORM_ID';
+export const WAITLIST_URL = 'https://forms.gle/D6PrYXRA6vjCmx3X9';
 export const REPORT_TITLE = 'Snow service invoice review';
 
 // Exact copy, SPEC §9.4.

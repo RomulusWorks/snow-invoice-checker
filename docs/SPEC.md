@@ -810,7 +810,7 @@ Never round confidence up.
 
 > Want a full line-by-line audit of your contract and invoices? **Join the waitlist.**
 
-Link `https://forms.gle/REPLACE_WITH_REAL_FORM_ID` — `target="_blank" rel="noopener noreferrer"`. Store the URL in `constants.js` as `WAITLIST_URL`. No embedded form, no email collection.
+Link `https://forms.gle/REPLACE_WITH_REAL_FORM_ID` — `target="_blank" rel="noopener noreferrer"`. Store the URL in `constants.js` as `WAITLIST_URL`. *(Launch: replaced with the owner's real form, `https://forms.gle/D6PrYXRA6vjCmx3X9`.)* No embedded form, no email collection.
 
 ### 10.4 Visual direction
 

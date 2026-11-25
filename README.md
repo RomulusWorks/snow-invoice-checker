@@ -156,8 +156,8 @@ Push to `main`: GitHub Actions runs `node --test` (Node 24 LTS), then publishes 
 `assets/` and `public/` to GitHub Pages. One-time repository setting:
 **Settings → Pages → Source: GitHub Actions**. Action versions were verified current on 2026-11-25.
 
-**Before launch:** replace `WAITLIST_URL` in `assets/js/constants.js` **and** the waitlist link
-`href` in `index.html` with the real Google Form URL.
+**Waitlist link:** `WAITLIST_URL` in `assets/js/constants.js` and the waitlist link `href` in
+`index.html` point to the real Google Form (a test checks they match). Change both together.
 
 ### NOAA weather data — observed schema (Phase 2, captured 2026-11-25)
 
