@@ -767,6 +767,10 @@ Never round confidence up.
 | CORS fallback | "NOAA data could not be loaded directly in this browser. Download the CSV below, then upload the file here. The data stays on this device." |
 | Report truncation | "This one-page report shows the first 18 billed lines. Export the results CSV for the full line-by-line detail." |
 | Contract field errors | "{Field name} is required for this contract type." / "{Field name} must be between {min} and {max}." / "Season end date must be on or after the start date." |
+| *(v1.2, approved Phase 4)* Optional money field invalid (price per push/event, overage rate, seasonal fee) | "{Field name} must be blank or a number greater than or equal to 0." |
+| *(v1.2, approved Phase 4)* Push allowance invalid | "Push allowance must be a number greater than or equal to 0." |
+| *(v1.2, approved Phase 4)* Tier table invalid (§4.4) — one of: | "Tier {n}: inches and charge per push must be numbers greater than or equal to 0." / "Tier 1 must start at 0 inches." / "Tier {n} must start where tier {p} ends." / "Tier {n}: “Up to” must be greater than “From”." / "Only the last tier may leave “Up to” blank." — each followed by "Tier-based estimates are turned off until the tier table is fixed." |
+| *(v1.2, approved Phase 4)* Help text | Walkway trigger: "Optional. Leave blank to use the plow trigger." Optional fields: "Optional." Location method: "ZIP Code Tabulation Area {zip} centroid: {lat}, {lon}" |
 
 ---
 

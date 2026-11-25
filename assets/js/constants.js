@@ -109,11 +109,7 @@ export const MESSAGES = Object.freeze({
   FIELD_REQUIRED: '{field} is required for this contract type.',
   FIELD_RANGE: '{field} must be between {min} and {max}.',
   SEASON_END_BEFORE_START: 'Season end date must be on or after the start date.',
-});
-
-// PENDING OWNER APPROVAL (Phase 4): validation copy SPEC §9.5 does not define. Wording adapted
-// from the approved CSV messages (§5.3) where possible.
-export const MESSAGES_PENDING_APPROVAL = Object.freeze({
+  // Approved by the product owner in Phase 4 (SPEC v1.2, §9.5).
   FIELD_OPTIONAL_NON_NEGATIVE: '{field} must be blank or a number greater than or equal to 0.',
   FIELD_NON_NEGATIVE: '{field} must be a number greater than or equal to 0.',
   TIER_NUMBERS: 'Tier {n}: inches and charge per push must be numbers greater than or equal to 0.',

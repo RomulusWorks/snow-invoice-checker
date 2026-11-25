@@ -8,7 +8,7 @@ import { parseBilledServicesCsv, rowMessage } from './csv.js';
 import { createStorage } from './storage.js';
 import { DEMO_LABEL, DEMO_FORM, DEMO_ROWS, DEMO_STATIONS, DEMO_OBSERVATIONS } from './demo-data.js';
 import {
-  MESSAGES, MESSAGES_PENDING_APPROVAL as PENDING, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES,
+  MESSAGES, STATUS_LABELS, CONTRACT_TYPES, SERVICE_TYPES, DEFAULT_RADIUS_MILES,
 } from './constants.js';
 import {
   decimalToCents, parseDecimal, isRealIsoDate, formatCents, formatQuantity, formatInches, centsToDecimalText,
@@ -32,7 +32,7 @@ function optionalCents(raw, field, errors, key) {
   const text = String(raw ?? '').trim();
   if (text === '') return null;
   const cents = decimalToCents(text);
-  if (cents === null) errors.push({ key, message: fill(PENDING.FIELD_OPTIONAL_NON_NEGATIVE, { field }) });
+  if (cents === null) errors.push({ key, message: fill(MESSAGES.FIELD_OPTIONAL_NON_NEGATIVE, { field }) });
   return cents;
 }
 
@@ -55,19 +55,19 @@ function triggerValue(raw, field, required, errors, key) {
 export function validateTiers(rawTiers) {
   const rows = Array.isArray(rawTiers) ? rawTiers : [];
   const tiers = [];
-  const fail = (msg) => ({ tiers: null, error: `${msg} ${PENDING.TIER_DISABLED_SUFFIX}` });
-  if (rows.length === 0) return fail(fill(PENDING.TIER_NUMBERS, { n: 1 }));
+  const fail = (msg) => ({ tiers: null, error: `${msg} ${MESSAGES.TIER_DISABLED_SUFFIX}` });
+  if (rows.length === 0) return fail(fill(MESSAGES.TIER_NUMBERS, { n: 1 }));
   for (let i = 0; i < rows.length; i++) {
     const n = i + 1;
     const min = parseDecimal(String(rows[i].min ?? '').trim());
     const maxText = String(rows[i].max ?? '').trim();
     const max = maxText === '' ? null : parseDecimal(maxText);
     const charge = decimalToCents(String(rows[i].charge ?? '').trim());
-    if (min === null || (maxText !== '' && max === null) || charge === null) return fail(fill(PENDING.TIER_NUMBERS, { n }));
-    if (i === 0 && min !== 0) return fail(PENDING.TIER_FIRST_MIN);
-    if (max === null && i !== rows.length - 1) return fail(PENDING.TIER_OPEN_ENDED);
-    if (max !== null && max <= min) return fail(fill(PENDING.TIER_MAX_ORDER, { n }));
-    if (i > 0 && tiers[i - 1].maxSnowInchesExclusive !== min) return fail(fill(PENDING.TIER_CONTIGUOUS, { n, p: n - 1 }));
+    if (min === null || (maxText !== '' && max === null) || charge === null) return fail(fill(MESSAGES.TIER_NUMBERS, { n }));
+    if (i === 0 && min !== 0) return fail(MESSAGES.TIER_FIRST_MIN);
+    if (max === null && i !== rows.length - 1) return fail(MESSAGES.TIER_OPEN_ENDED);
+    if (max !== null && max <= min) return fail(fill(MESSAGES.TIER_MAX_ORDER, { n }));
+    if (i > 0 && tiers[i - 1].maxSnowInchesExclusive !== min) return fail(fill(MESSAGES.TIER_CONTIGUOUS, { n, p: n - 1 }));
     tiers.push({ minSnowInches: min, maxSnowInchesExclusive: max, chargePerPushCents: charge });
   }
   return { tiers, error: null };
@@ -108,7 +108,7 @@ export function validateContractForm(values) {
       errors.push({ key: 'pushAllowance', message: fill(MESSAGES.FIELD_REQUIRED, { field: 'Push allowance' }) });
     } else {
       contract.pushAllowance = parseDecimal(allowanceText);
-      if (contract.pushAllowance === null) errors.push({ key: 'pushAllowance', message: fill(PENDING.FIELD_NON_NEGATIVE, { field: 'Push allowance' }) });
+      if (contract.pushAllowance === null) errors.push({ key: 'pushAllowance', message: fill(MESSAGES.FIELD_NON_NEGATIVE, { field: 'Push allowance' }) });
     }
     contract.overageRateCents = optionalCents(values.overageRate, 'Overage rate', errors, 'overageRate');
     contract.allowanceCountsWalkway = values.allowanceCountsWalkway === true;
