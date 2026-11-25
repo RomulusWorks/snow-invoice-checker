@@ -6,6 +6,7 @@
   <title>Snow Invoice Checker — A free HOA board screening tool</title>
   <meta name="description" content="Compare snow-removal invoice lines with nearby NOAA weather station records. An informational screening tool for HOA boards.">
   <link rel="stylesheet" href="./assets/css/styles.css">
+  <script type="module" src="./assets/js/app.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -27,6 +28,218 @@
       <summary>Important: what this tool can and cannot tell you</summary>
       <p>This report is an informational screening tool, not a certified snowfall record, invoice audit, legal opinion, or finding of overbilling. Weather stations may be miles from the property and may report on observation periods that do not match contractor service times. Local snowfall, drifting, ice, pavement conditions, and work performed may differ from station records. A flagged item is only worth asking about; it is not proof that a service was unnecessary or incorrectly billed. Confirm conditions, service logs, contract terms, and invoice details with the contractor before taking action. NOAA/NCEI data are provided as-is and may be revised. This tool is independent and is not affiliated with or endorsed by NOAA.</p>
     </details>
+
+    <noscript><p class="notice">This checker needs JavaScript to run in your browser. Your entries stay on this device.</p></noscript>
+
+    <form id="checker-form" novalidate>
+      <div id="demo-banner" class="demo-banner" hidden>
+        <p><strong id="demo-banner-label"></strong></p>
+        <button type="button" id="clear-example" class="secondary">Clear example</button>
+      </div>
+
+      <!-- 1. Property & contract -->
+      <section class="card" aria-labelledby="property-heading">
+        <h2 id="property-heading">Property &amp; contract</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="zip">Property ZIP code</label>
+            <input id="zip" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5"
+              aria-describedby="zip-help zip-error" required>
+            <p id="zip-help" class="help">We use a Census ZIP Code Tabulation Area centroid to find nearby stations. It may not be the exact property location.</p>
+            <p id="zip-error" class="field-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="radius">Station radius</label>
+            <select id="radius" name="radius">
+              <option value="10">10 miles</option>
+              <option value="15" selected>15 miles</option>
+              <option value="25">25 miles</option>
+            </select>
+          </div>
+        </div>
+        <details id="location-method" class="location-method" hidden>
+          <summary>Location method</summary>
+          <p id="location-method-text"></p>
+        </details>
+
+        <div class="field">
+          <label for="contract-type">Contract type</label>
+          <select id="contract-type" name="contractType">
+            <option value="PER_PUSH" selected>Per-push</option>
+            <option value="PER_EVENT">Per-event</option>
+            <option value="PER_INCH_TIERS">Per-inch tiers</option>
+            <option value="SEASONAL_ALLOWANCE">Seasonal flat fee with push allowance</option>
+            <option value="SEASONAL_UNLIMITED">Seasonal flat fee, unlimited</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="plow-trigger">Plow trigger (inches)</label>
+            <input id="plow-trigger" name="plowTrigger" type="text" inputmode="decimal" value="2.0" aria-describedby="plow-trigger-error" required>
+            <p id="plow-trigger-error" class="field-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="walkway-trigger">Walkway trigger (inches)</label>
+            <input id="walkway-trigger" name="walkwayTrigger" type="text" inputmode="decimal" aria-describedby="walkway-trigger-help walkway-trigger-error">
+            <p id="walkway-trigger-help" class="help">Optional. Leave blank to use the plow trigger.</p>
+            <p id="walkway-trigger-error" class="field-error" hidden></p>
+          </div>
+        </div>
+
+        <!-- Per-push / per-inch tiers -->
+        <div class="field" data-show-for="PER_PUSH PER_INCH_TIERS">
+          <label for="extra-pushes">Extra pushes allowed per storm</label>
+          <select id="extra-pushes" name="extraPushes">
+            <option value="0">0</option>
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+
+        <div class="field" data-show-for="PER_PUSH">
+          <label for="price-per-push">Price per push (USD)</label>
+          <input id="price-per-push" name="pricePerPush" type="text" inputmode="decimal" aria-describedby="price-per-push-help price-per-push-error">
+          <p id="price-per-push-help" class="help">Optional.</p>
+          <p id="price-per-push-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field" data-show-for="PER_EVENT" hidden>
+          <label for="price-per-event">Price per event (USD)</label>
+          <input id="price-per-event" name="pricePerEvent" type="text" inputmode="decimal" aria-describedby="price-per-event-help price-per-event-error">
+          <p id="price-per-event-help" class="help">Optional.</p>
+          <p id="price-per-event-error" class="field-error" hidden></p>
+        </div>
+
+        <fieldset class="tiers" data-show-for="PER_INCH_TIERS" hidden>
+          <legend>Per-inch tiers</legend>
+          <div class="table-scroll" role="region" aria-label="Per-inch tier table" tabindex="0">
+            <table class="data-table">
+              <thead>
+                <tr><th scope="col">From (inches)</th><th scope="col">Up to, not including (inches)</th><th scope="col">Charge per push (USD)</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr>
+              </thead>
+              <tbody id="tier-body"></tbody>
+            </table>
+          </div>
+          <button type="button" id="add-tier" class="secondary">Add tier</button>
+          <p id="tier-error" class="field-error" hidden></p>
+        </fieldset>
+
+        <div data-show-for="SEASONAL_ALLOWANCE" hidden>
+          <div class="field-row">
+            <div class="field">
+              <label for="season-start">Season start</label>
+              <input id="season-start" name="seasonStart" type="date" aria-describedby="season-start-error">
+              <p id="season-start-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="season-end">Season end</label>
+              <input id="season-end" name="seasonEnd" type="date" aria-describedby="season-end-error">
+              <p id="season-end-error" class="field-error" hidden></p>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="push-allowance">Push allowance</label>
+              <input id="push-allowance" name="pushAllowance" type="text" inputmode="decimal" aria-describedby="push-allowance-error">
+              <p id="push-allowance-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="overage-rate">Overage rate (USD per push)</label>
+              <input id="overage-rate" name="overageRate" type="text" inputmode="decimal" aria-describedby="overage-rate-help overage-rate-error">
+              <p id="overage-rate-help" class="help">Optional.</p>
+              <p id="overage-rate-error" class="field-error" hidden></p>
+            </div>
+          </div>
+          <div class="check">
+            <input id="allowance-walkway" name="allowanceCountsWalkway" type="checkbox">
+            <label for="allowance-walkway">Allowance counts walkway services too</label>
+          </div>
+          <div class="check">
+            <input id="season-complete" name="seasonComplete" type="checkbox">
+            <label for="season-complete">I entered every billed push for this season</label>
+          </div>
+        </div>
+
+        <div class="field" data-show-for="SEASONAL_UNLIMITED" hidden>
+          <label for="seasonal-fee">Seasonal fee (USD)</label>
+          <input id="seasonal-fee" name="seasonalFee" type="text" inputmode="decimal" aria-describedby="seasonal-fee-help seasonal-fee-error">
+          <p id="seasonal-fee-help" class="help">Optional.</p>
+          <p id="seasonal-fee-error" class="field-error" hidden></p>
+        </div>
+      </section>
+
+      <!-- 2. Billed services -->
+      <section class="card" aria-labelledby="services-heading">
+        <h2 id="services-heading">Billed services</h2>
+        <p id="no-rows" class="empty">Add a billed service or import a CSV to begin.</p>
+        <div class="table-scroll" role="region" aria-labelledby="services-heading" tabindex="0">
+          <table class="data-table" id="services-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Service type</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Amount charged (USD)</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="rows-body"></tbody>
+          </table>
+        </div>
+        <div class="button-row">
+          <button type="button" id="add-row" class="secondary">Add row</button>
+          <button type="button" id="load-example" class="secondary">Load example</button>
+        </div>
+        <ul id="rows-errors" class="error-list" hidden></ul>
+
+        <details class="csv-import">
+          <summary>Import from CSV</summary>
+          <div class="field">
+            <label for="csv-file">Choose a CSV file</label>
+            <input id="csv-file" type="file" accept=".csv,text/csv">
+          </div>
+          <div class="field">
+            <label for="csv-text">Or paste CSV text</label>
+            <textarea id="csv-text" rows="6" spellcheck="false" aria-describedby="csv-help"></textarea>
+            <p id="csv-help" class="help">Columns: date, service_type, quantity, amount_charged. Importing replaces the table only if the whole file is valid.</p>
+          </div>
+          <div class="button-row">
+            <button type="button" id="import-csv" class="secondary">Import CSV text</button>
+            <a class="button-link secondary" href="./public/sample-billed-services.csv" download="sample-billed-services.csv">Download sample CSV</a>
+          </div>
+          <ul id="csv-errors" class="error-list" hidden></ul>
+        </details>
+
+        <div class="storage-controls">
+          <div class="check">
+            <input id="remember" type="checkbox">
+            <label for="remember">Remember my entries on this device</label>
+          </div>
+          <div class="button-row">
+            <button type="button" id="clear-saved" class="secondary">Clear saved entries</button>
+            <button type="button" id="reset" class="secondary">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="run">
+        <button type="submit" id="run-check" class="primary">Check billed services</button>
+      </div>
+      <p id="form-errors" class="form-errors" role="alert" hidden></p>
+    </form>
+
+    <!-- Status announcements (loading, errors, notices) -->
+    <div id="status" class="status" aria-live="polite"></div>
+
+    <!-- Results (placeholder table this phase) -->
+    <section id="results" class="card" aria-labelledby="results-heading" tabindex="-1">
+      <h2 id="results-heading">Results</h2>
+      <p id="results-demo-label" class="demo-label" hidden></p>
+      <p id="results-empty" class="empty">Your report will appear here after you run the check.</p>
+      <div id="results-content" hidden></div>
+    </section>
   </main>
 </body>
 </html>

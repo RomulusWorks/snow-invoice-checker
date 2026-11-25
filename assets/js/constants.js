@@ -89,8 +89,37 @@ export const EVIDENCE_LABELS = Object.freeze({
   REJECTED_QUALITY: 'rejected quality data',
 });
 
+// Exact copy, SPEC §9.5.
 export const MESSAGES = Object.freeze({
   INVALID_ZIP_SHAPE: 'Enter a five-digit ZIP code.',
   ZIP_NOT_IN_ZCTA:
     'This ZIP code is not in the bundled 2020 Census ZIP Code Tabulation Area file. Check the ZIP or use another ZIP for the property area. Some valid USPS ZIP codes do not have a Census ZCTA.',
+  NO_ROWS: 'Add a billed service or import a CSV to begin.',
+  NO_RESULTS: 'Your report will appear here after you run the check.',
+  LOADING: 'Finding nearby stations and checking the weather records…',
+  NO_STATIONS: 'No stations with snowfall records were found within {radius} miles of this ZIP Code Area. Try a wider radius. No weather conclusion was made.',
+  NETWORK: "We couldn't retrieve NOAA weather data. Check your connection and try once more. Your entries are still here.",
+  HTTP_ERROR: "NOAA's data service returned an error ({status}). No result was calculated. Try again later or use the CSV download option.",
+  INVALID_RESPONSE: 'The weather response could not be read safely. No result was calculated. Please try again later.',
+  NO_ROWS_ON_RUN: 'Add at least one billed service before running the check.',
+  STORAGE_BLOCKED: 'Your browser blocked local storage. The checker still works, but entries will not be remembered after you close this page.',
+  CORRUPT_SAVED: 'Saved entries could not be read and were skipped. You can continue with a fresh check.',
+  CORS_FALLBACK: 'NOAA data could not be loaded directly in this browser. Download the CSV below, then upload the file here. The data stays on this device.',
+  REPORT_TRUNCATION: 'This one-page report shows the first 18 billed lines. Export the results CSV for the full line-by-line detail.',
+  FIELD_REQUIRED: '{field} is required for this contract type.',
+  FIELD_RANGE: '{field} must be between {min} and {max}.',
+  SEASON_END_BEFORE_START: 'Season end date must be on or after the start date.',
+});
+
+// PENDING OWNER APPROVAL (Phase 4): validation copy SPEC §9.5 does not define. Wording adapted
+// from the approved CSV messages (§5.3) where possible.
+export const MESSAGES_PENDING_APPROVAL = Object.freeze({
+  FIELD_OPTIONAL_NON_NEGATIVE: '{field} must be blank or a number greater than or equal to 0.',
+  FIELD_NON_NEGATIVE: '{field} must be a number greater than or equal to 0.',
+  TIER_NUMBERS: 'Tier {n}: inches and charge per push must be numbers greater than or equal to 0.',
+  TIER_FIRST_MIN: 'Tier 1 must start at 0 inches.',
+  TIER_CONTIGUOUS: 'Tier {n} must start where tier {p} ends.',
+  TIER_MAX_ORDER: 'Tier {n}: “Up to” must be greater than “From”.',
+  TIER_OPEN_ENDED: 'Only the last tier may leave “Up to” blank.',
+  TIER_DISABLED_SUFFIX: 'Tier-based estimates are turned off until the tier table is fixed.',
 });
