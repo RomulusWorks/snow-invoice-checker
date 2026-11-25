@@ -1031,11 +1031,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
-      - uses: actions/configure-pages@v5
+          node-version: 24
+      - uses: actions/configure-pages@v6
       - name: Run offline tests
         run: node --test
       - name: Assemble site
@@ -1043,7 +1043,7 @@ jobs:
           mkdir -p _site
           cp index.html _site/
           cp -r assets public _site/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -1055,10 +1055,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 ```
 
-Only `index.html`, `assets/`, `public/` are published (no tests, scripts, docs, raw data). Owner must set **Settings → Pages → Source: GitHub Actions**. Verify action major versions are current before launch.
+Only `index.html`, `assets/`, `public/` are published (no tests, scripts, docs, raw data). Owner must set **Settings → Pages → Source: GitHub Actions**. Verify action major versions are current before launch. *(v1.2, Phase 6: verified 2026-11-25 — checkout v7, setup-node v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5, all Node 24; CI tests run on Node 24 LTS because Node 20 reached end of life.)*
 
 ### 14.2 README
 
